@@ -1,0 +1,15 @@
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Consulta } from './consulta.entity';
+import { ConsultasController } from './consultas.controller';
+import { ConsultasService } from './consultas.service';
+import { MailModule } from '../mail/mail.module';
+import { EstudiosModule } from '../estudios/estudios.module';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Consulta]), MailModule, EstudiosModule],
+  controllers: [ConsultasController],
+  providers: [ConsultasService],
+  exports: [ConsultasService],
+})
+export class ConsultasModule {}
