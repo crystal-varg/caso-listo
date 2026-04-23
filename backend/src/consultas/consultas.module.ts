@@ -5,9 +5,10 @@ import { ConsultasController } from './consultas.controller';
 import { ConsultasService } from './consultas.service';
 import { MailModule } from '../mail/mail.module';
 import { EstudiosModule } from '../estudios/estudios.module';
+import { ActividadModule } from '../actividad/actividad.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Consulta]), MailModule, EstudiosModule],
+  imports: [TypeOrmModule.forFeature([Consulta]), MailModule, EstudiosModule, ActividadModule],
   controllers: [ConsultasController],
   providers: [ConsultasService],
   exports: [ConsultasService],

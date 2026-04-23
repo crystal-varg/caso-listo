@@ -124,6 +124,12 @@ export class ConsultasController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('sin-movimiento')
+  getSinMovimiento(@Request() req) {
+    return this.consultasService.findSinMovimiento(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('archivos/:filename')
   getArchivo(@Param('filename') filename: string, @Res() res: Response) {
     const safeName = path.basename(filename);

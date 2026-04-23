@@ -5,6 +5,7 @@ import { Consulta, EstadoConsulta } from './consulta.entity';
 import { CreateConsultaDto, UpdateConsultaDto } from './consulta.dto';
 import { MailService } from '../mail/mail.service';
 import { EstudiosService } from '../estudios/estudios.service';
+import { ActividadService } from '../actividad/actividad.service';
 
 @Injectable()
 export class ConsultasService {
@@ -13,9 +14,9 @@ export class ConsultasService {
     private consultaRepository: Repository<Consulta>,
     private mailService: MailService,
     private estudiosService: EstudiosService,
+    private actividadService: ActividadService,
   ) {}
 
-  // Endpoint público — cualquier cliente puede enviar consulta a un estudio por slug
   async createPublica(
     slug: string,
     dto: CreateConsultaDto,
@@ -33,7 +34,23 @@ export class ConsultasService {
 
     const saved = await this.consultaRepository.save(consulta);
 
-    // Notificar al abogado por email (no bloqueante)
+    // Register activity (non-blocking)
+    this.actividadService
+      .registrar(saved.id, 'consulta_creada', 'Nueva consulta recibida')
+      .catch((err) => console.error('Error registrando actividad:', err));
+
+    if (archivos?.dniArchivo && archivos.dniArchivo !== 'faltante') {
+      this.actividadService
+        .registrar(saved.id, 'documento_subido', 'DNI adjuntado')
+        .catch(() => {});
+    }
+    if (archivos?.docsArchivo && archivos.docsArchivo !== 'faltante') {
+      this.actividadService
+        .registrar(saved.id, 'documento_subido', 'Documentación adjuntada')
+        .catch(() => {});
+    }
+
+    // Notify lawyer by email (non-blocking)
     this.mailService
       .notificarNuevaConsulta(estudio.usuario, saved)
       .catch((err) => console.error('Error enviando email:', err));
@@ -41,7 +58,6 @@ export class ConsultasService {
     return saved;
   }
 
-  // Panel del abogado — ver sus consultas
   async findByUsuario(
     usuarioId: number,
     filtros?: { estado?: EstadoConsulta; fuero?: string },
@@ -76,11 +92,19 @@ export class ConsultasService {
 
   async update(id: number, usuarioId: number, dto: UpdateConsultaDto): Promise<Consulta> {
     const consulta = await this.findOne(id, usuarioId);
+    const estadoAnterior = consulta.estado;
     Object.assign(consulta, dto);
-    return this.consultaRepository.save(consulta);
+    const saved = await this.consultaRepository.save(consulta);
+
+    if (dto.estado && dto.estado !== estadoAnterior) {
+      this.actividadService
+        .registrar(id, 'estado_cambiado', `Estado cambiado a ${dto.estado}`)
+        .catch(() => {});
+    }
+
+    return saved;
   }
 
-  // Horarios ya reservados para un estudio en una fecha dada
   async getDisponibilidad(
     slug: string,
     fecha: string,
@@ -100,7 +124,6 @@ export class ConsultasService {
     return { ocupados };
   }
 
-  // Estadísticas para el dashboard
   async getStats(usuarioId: number) {
     const consultas = await this.findByUsuario(usuarioId);
     return {
@@ -109,5 +132,30 @@ export class ConsultasService {
       en_proceso: consultas.filter((c) => c.estado === EstadoConsulta.EN_PROCESO).length,
       cerrado: consultas.filter((c) => c.estado === EstadoConsulta.CERRADO).length,
     };
+  }
+
+  // Returns open consultas with no activity (or last activity) older than 30 days.
+  // Falls back to updated_at when no activity rows exist yet.
+  async findSinMovimiento(usuarioId: number): Promise<any[]> {
+    return this.consultaRepository.query(
+      `SELECT
+        c.id,
+        c.nombre_cliente,
+        c.tipo_caso,
+        c.fuero,
+        c.estado,
+        c.updated_at,
+        COALESCE(MAX(a.created_at), c.updated_at) AS ultima_actividad,
+        EXTRACT(DAY FROM NOW() - COALESCE(MAX(a.created_at), c.updated_at))::int AS dias_sin_movimiento
+      FROM consultas c
+      INNER JOIN estudios e ON e.id = c.estudio_id
+      LEFT JOIN actividad a ON a.consulta_id = c.id
+      WHERE e.usuario_id = $1
+        AND c.estado != 'cerrado'
+      GROUP BY c.id
+      HAVING COALESCE(MAX(a.created_at), c.updated_at) < NOW() - INTERVAL '30 days'
+      ORDER BY ultima_actividad ASC`,
+      [usuarioId],
+    );
   }
 }
