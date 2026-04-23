@@ -74,6 +74,26 @@ export class ConsultasService {
     return this.consultaRepository.save(consulta);
   }
 
+  // Horarios ya reservados para un estudio en una fecha dada
+  async getDisponibilidad(
+    slug: string,
+    fecha: string,
+  ): Promise<{ ocupados: string[] }> {
+    const estudio = await this.estudiosService.findBySlug(slug);
+    if (!estudio) return { ocupados: [] };
+
+    const consultas = await this.consultaRepository.find({
+      where: { estudio_id: estudio.id, fecha_preferida: fecha },
+      select: ['horario_preferido'],
+    });
+
+    const ocupados = consultas
+      .map((c) => c.horario_preferido)
+      .filter((h): h is string => !!h);
+
+    return { ocupados };
+  }
+
   // Estadísticas para el dashboard
   async getStats(usuarioId: number) {
     const consultas = await this.findByUsuario(usuarioId);

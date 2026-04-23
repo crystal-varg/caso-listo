@@ -32,6 +32,15 @@ export class ConsultasController {
     };
   }
 
+  // ─── PÚBLICO: Disponibilidad de horarios ──────────────────────────────────
+  @Get('publica/:slug/disponibilidad')
+  getDisponibilidad(
+    @Param('slug') slug: string,
+    @Query('fecha') fecha: string,
+  ) {
+    return this.consultasService.getDisponibilidad(slug, fecha);
+  }
+
   // ─── PRIVADO: Panel del abogado ────────────────────────────────────────────
   @UseGuards(JwtAuthGuard)
   @Get()

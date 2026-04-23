@@ -24,6 +24,14 @@ export class CreateConsultaDto {
   @IsOptional()
   @IsString()
   urgencia?: string;
+
+  @IsOptional()
+  @IsString()
+  fecha_preferida?: string;
+
+  @IsOptional()
+  @IsString()
+  horario_preferido?: string;
 }
 
 export class UpdateConsultaDto {

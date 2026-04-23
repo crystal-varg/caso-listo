@@ -63,6 +63,12 @@ export class Consulta {
   @Column({ nullable: true })
   urgencia: string; // baja | media | alta
 
+  @Column({ nullable: true })
+  fecha_preferida: string; // YYYY-MM-DD
+
+  @Column({ nullable: true })
+  horario_preferido: string; // 9:00 | 11:00 | 14:00 | 16:00 | 18:00
+
   @ManyToOne(() => Estudio, (estudio) => estudio.consultas)
   @JoinColumn({ name: 'estudio_id' })
   estudio: Estudio;
