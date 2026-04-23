@@ -16,13 +16,19 @@ export class ConsultasService {
   ) {}
 
   // Endpoint público — cualquier cliente puede enviar consulta a un estudio por slug
-  async createPublica(slug: string, dto: CreateConsultaDto): Promise<Consulta> {
+  async createPublica(
+    slug: string,
+    dto: CreateConsultaDto,
+    archivos?: { dniArchivo?: string | null; docsArchivo?: string | null },
+  ): Promise<Consulta> {
     const estudio = await this.estudiosService.findBySlug(slug);
     if (!estudio) throw new NotFoundException('Estudio no encontrado');
 
     const consulta = this.consultaRepository.create({
       ...dto,
       estudio_id: estudio.id,
+      dni_archivo: archivos?.dniArchivo ?? null,
+      docs_archivo: archivos?.docsArchivo ?? null,
     });
 
     const saved = await this.consultaRepository.save(consulta);

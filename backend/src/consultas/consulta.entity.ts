@@ -69,6 +69,13 @@ export class Consulta {
   @Column({ nullable: true })
   horario_preferido: string; // 9:00 | 11:00 | 14:00 | 16:00 | 18:00
 
+  // null = pendiente | 'faltante' = no tiene | <filename> = subido
+  @Column({ nullable: true })
+  dni_archivo: string;
+
+  @Column({ nullable: true })
+  docs_archivo: string;
+
   @ManyToOne(() => Estudio, (estudio) => estudio.consultas)
   @JoinColumn({ name: 'estudio_id' })
   estudio: Estudio;

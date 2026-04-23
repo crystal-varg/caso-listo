@@ -2,13 +2,25 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { api } from '@/lib/api';
+import { api, API_URL } from '@/lib/api';
 
 interface Consulta {
   id: number; nombre_cliente: string; email: string; telefono: string;
   mensaje: string; estado: string; fuero: string; urgencia: string; tipo_caso: string; created_at: string;
   fecha_preferida?: string; horario_preferido?: string;
+  dni_archivo?: string; docs_archivo?: string;
 }
+
+function docEstado(val?: string): 'pendiente' | 'faltante' | 'subido' {
+  if (!val) return 'pendiente';
+  return val === 'faltante' ? 'faltante' : 'subido';
+}
+
+const DOC_BADGE: Record<string, { label: string; bg: string; color: string }> = {
+  pendiente: { label: 'Pendiente', bg: '#eef2ff', color: '#4f46e5' },
+  faltante:  { label: 'No disponible', bg: '#f3f4f6', color: '#6b7280' },
+  subido:    { label: 'Subido', bg: '#dcfce7', color: '#16a34a' },
+};
 
 // Parses "9:30am" → { h: 9, m: 30 }, "2:15pm" → { h: 14, m: 15 }
 function parseSlot(slot: string): { h: number; m: number } | null {
@@ -63,6 +75,21 @@ const urgLabel: Record<string, { label: string; emoji: string; cls: string }> = 
   media: { label: 'Media', emoji: '🟡', cls: 'badge-media' },
   baja:  { label: 'Baja',  emoji: '🟢', cls: 'badge-baja' },
 };
+
+async function descargarArchivo(filename: string, label: string) {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('caso_listo_token') : null;
+  const res = await fetch(`${API_URL}/consultas/archivos/${filename}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) return;
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = label;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function ConsultaDetailPage() {
   const params = useParams();
@@ -178,6 +205,44 @@ export default function ConsultaDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Documentación */}
+        {(consulta.dni_archivo !== undefined || consulta.docs_archivo !== undefined) && (
+          <div className="card">
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#9ca3af', marginBottom: 16 }}>
+              Documentación adjunta
+            </div>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {[
+                { key: 'dni_archivo' as const, label: 'DNI' },
+                { key: 'docs_archivo' as const, label: 'Documentación relacionada' },
+              ].map(({ key, label }) => {
+                const val = consulta[key];
+                const est = docEstado(val);
+                const badge = DOC_BADGE[est];
+                return (
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#111' }}>{label}</div>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: badge.bg, color: badge.color }}>
+                        {badge.label}
+                      </span>
+                    </div>
+                    {est === 'subido' && val && val !== 'faltante' && (
+                      <button
+                        onClick={() => descargarArchivo(val, `${label.replace(/\s/g, '_')}.pdf`)}
+                        className="btn-ghost"
+                        style={{ fontSize: 13, padding: '6px 14px' }}
+                      >
+                        ⬇ Descargar
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Clasificación — el abogado controla */}
         <div className="card">

@@ -32,6 +32,14 @@ export class CreateConsultaDto {
   @IsOptional()
   @IsString()
   horario_preferido?: string;
+
+  @IsOptional()
+  @IsString()
+  dni_estado?: string; // 'pendiente' | 'faltante'
+
+  @IsOptional()
+  @IsString()
+  docs_estado?: string; // 'pendiente' | 'faltante'
 }
 
 export class UpdateConsultaDto {
