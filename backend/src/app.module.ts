@@ -8,12 +8,14 @@ import { MailModule } from './mail/mail.module';
 import { HonorariosModule } from './honorarios/honorarios.module';
 import { ActividadModule } from './actividad/actividad.module';
 import { EventosModule } from './eventos/eventos.module';
+import { NotificacionesModule } from './notificaciones/notificaciones.module';
 import { Usuario } from './users/usuario.entity';
 import { Consulta } from './consultas/consulta.entity';
 import { Estudio } from './estudios/estudio.entity';
 import { Honorario } from './honorarios/honorario.entity';
 import { Actividad } from './actividad/actividad.entity';
 import { Evento } from './eventos/evento.entity';
+import { Notificacion } from './notificaciones/notificacion.entity';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -41,7 +43,7 @@ function getDbConfig() {
     TypeOrmModule.forRoot({
       type: 'postgres',
       ...getDbConfig(),
-      entities: [Usuario, Consulta, Estudio, Honorario, Actividad, Evento],
+      entities: [Usuario, Consulta, Estudio, Honorario, Actividad, Evento, Notificacion],
       synchronize: true, // Railway crea las tablas al primer deploy
       logging: false,
     }),
@@ -53,6 +55,7 @@ function getDbConfig() {
     HonorariosModule,
     ActividadModule,
     EventosModule,
+    NotificacionesModule,
   ],
 })
 export class AppModule {}

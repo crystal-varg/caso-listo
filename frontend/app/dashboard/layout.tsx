@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
+import { NotificationBell } from '@/components/NotificationBell';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -94,9 +95,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* User footer */}
-        <div style={{ padding: '16px 20px', borderTop: '1px solid #f0f0f0' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#111', marginBottom: 2 }}>{usuario.nombre}</div>
-          <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>{usuario.email}</div>
+        <div style={{ padding: '14px 16px', borderTop: '1px solid #f0f0f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{usuario.nombre}</div>
+              <div style={{ fontSize: 11, color: '#9ca3af', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{usuario.email}</div>
+            </div>
+            <NotificationBell />
+          </div>
           <button
             onClick={() => { logout(); router.push('/'); }}
             style={{ fontSize: 13, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}

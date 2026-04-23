@@ -6,6 +6,7 @@ import { CreateConsultaDto, UpdateConsultaDto } from './consulta.dto';
 import { MailService } from '../mail/mail.service';
 import { EstudiosService } from '../estudios/estudios.service';
 import { ActividadService } from '../actividad/actividad.service';
+import { NotificacionesService } from '../notificaciones/notificaciones.service';
 
 @Injectable()
 export class ConsultasService {
@@ -15,6 +16,7 @@ export class ConsultasService {
     private mailService: MailService,
     private estudiosService: EstudiosService,
     private actividadService: ActividadService,
+    private notificacionesService: NotificacionesService,
   ) {}
 
   async createPublica(
@@ -38,6 +40,18 @@ export class ConsultasService {
     this.actividadService
       .registrar(saved.id, 'consulta_creada', 'Nueva consulta recibida')
       .catch((err) => console.error('Error registrando actividad:', err));
+
+    // In-app notification for the lawyer (non-blocking)
+    this.notificacionesService
+      .crear({
+        usuario_id: estudio.usuario_id,
+        consulta_id: saved.id,
+        tipo: 'consulta_nueva',
+        canal: 'in_app',
+        titulo: 'Nueva consulta recibida',
+        mensaje: `Tenés una nueva consulta de ${saved.nombre_cliente}.`,
+      })
+      .catch(() => {});
 
     if (archivos?.dniArchivo && archivos.dniArchivo !== 'faltante') {
       this.actividadService
