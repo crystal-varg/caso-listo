@@ -5,9 +5,11 @@ import { UsersModule } from './users/users.module';
 import { ConsultasModule } from './consultas/consultas.module';
 import { EstudiosModule } from './estudios/estudios.module';
 import { MailModule } from './mail/mail.module';
+import { HonorariosModule } from './honorarios/honorarios.module';
 import { Usuario } from './users/usuario.entity';
 import { Consulta } from './consultas/consulta.entity';
 import { Estudio } from './estudios/estudio.entity';
+import { Honorario } from './honorarios/honorario.entity';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -35,7 +37,7 @@ function getDbConfig() {
     TypeOrmModule.forRoot({
       type: 'postgres',
       ...getDbConfig(),
-      entities: [Usuario, Consulta, Estudio],
+      entities: [Usuario, Consulta, Estudio, Honorario],
       synchronize: true, // Railway crea las tablas al primer deploy
       logging: false,
     }),
@@ -44,6 +46,7 @@ function getDbConfig() {
     ConsultasModule,
     EstudiosModule,
     MailModule,
+    HonorariosModule,
   ],
 })
 export class AppModule {}
