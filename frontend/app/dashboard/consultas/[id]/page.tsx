@@ -7,6 +7,46 @@ import { api } from '@/lib/api';
 interface Consulta {
   id: number; nombre_cliente: string; email: string; telefono: string;
   mensaje: string; estado: string; fuero: string; urgencia: string; tipo_caso: string; created_at: string;
+  fecha_preferida?: string; horario_preferido?: string;
+}
+
+// Parses "9:30am" → { h: 9, m: 30 }, "2:15pm" → { h: 14, m: 15 }
+function parseSlot(slot: string): { h: number; m: number } | null {
+  const match = slot.match(/^(\d+):(\d+)(am|pm)$/i);
+  if (!match) return null;
+  let h = parseInt(match[1]);
+  const m = parseInt(match[2]);
+  const ampm = match[3].toLowerCase();
+  if (ampm === 'pm' && h !== 12) h += 12;
+  if (ampm === 'am' && h === 12) h = 0;
+  return { h, m };
+}
+
+function buildGoogleCalendarUrl(c: Consulta): string {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const [year, month, day] = (c.fecha_preferida ?? '').split('-').map(Number);
+  const datePart = `${year}${pad(month)}${pad(day)}`;
+
+  let dates: string;
+  const slot = c.horario_preferido ? parseSlot(c.horario_preferido) : null;
+  if (slot) {
+    const endH = slot.h + 1 < 24 ? slot.h + 1 : 23;
+    dates = `${datePart}T${pad(slot.h)}${pad(slot.m)}00/${datePart}T${pad(endH)}${pad(slot.m)}00`;
+  } else {
+    // All-day event when only date is set
+    dates = `${datePart}/${datePart}`;
+  }
+
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `Consulta: ${c.nombre_cliente}${c.tipo_caso ? ` — ${c.tipo_caso}` : ''}`,
+    dates,
+    details: `Cliente: ${c.nombre_cliente}\nEmail: ${c.email}${c.telefono ? '\nTeléfono: ' + c.telefono : ''}\n\nConsulta:\n${c.mensaje}`,
+    add: c.email,
+    ctz: 'America/Argentina/Buenos_Aires',
+  });
+
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
 const ESTADOS = ['nuevo', 'en_proceso', 'cerrado'];
@@ -127,6 +167,15 @@ export default function ConsultaDetailPage() {
                 <span style={{ fontSize: 14, color: '#111' }}>{consulta.tipo_caso}</span>
               </div>
             )}
+            {consulta.fecha_preferida && (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <span style={{ fontSize: 14, color: '#6b7280', width: 80, flexShrink: 0 }}>Fecha pref.</span>
+                <span style={{ fontSize: 14, color: '#111' }}>
+                  {new Date(consulta.fecha_preferida + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  {consulta.horario_preferido && <strong> — {consulta.horario_preferido} hs</strong>}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -181,6 +230,13 @@ export default function ConsultaDetailPage() {
             <a href={`https://wa.me/${consulta.telefono.replace(/\D/g, '')}?text=Hola ${consulta.nombre_cliente}, te contacto por tu consulta.`} target="_blank" style={{ textDecoration: 'none' }}>
               <button className="btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 💬 WhatsApp
+              </button>
+            </a>
+          )}
+          {consulta.fecha_preferida && (
+            <a href={buildGoogleCalendarUrl(consulta)} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <button className="btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                📅 Agendar en Google Calendar
               </button>
             </a>
           )}

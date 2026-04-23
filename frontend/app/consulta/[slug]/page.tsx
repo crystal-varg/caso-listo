@@ -29,7 +29,20 @@ const URGENCIAS = [
   { value: 'baja', emoji: '🟢', label: 'Baja', desc: 'Puedo esperar' },
 ];
 
-const HORARIOS = ['9:00', '11:00', '14:00', '16:00', '18:00'];
+// Generates slots like "7:00am", "7:15am", ..., "9:45pm"
+function generateSlots(startHour = 7, endHour = 22): string[] {
+  const slots: string[] = [];
+  for (let h = startHour; h < endHour; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const ampm = h < 12 ? 'am' : 'pm';
+      slots.push(`${h12}:${m === 0 ? '00' : m}${ampm}`);
+    }
+  }
+  return slots;
+}
+
+const HORARIOS = generateSlots();
 
 const STEPS = [
   { number: 1, title: 'Tipo de consulta' },
@@ -304,31 +317,34 @@ export default function ConsultaPublicaPage() {
                   {loadingSlots ? (
                     <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 8 }}>Verificando disponibilidad...</p>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginTop: 8 }}>
-                      {HORARIOS.map((h) => {
-                        const ocupado = ocupados.includes(h);
-                        const seleccionado = form.horario_preferido === h;
-                        return (
-                          <button
-                            key={h}
-                            type="button"
-                            disabled={ocupado}
-                            onClick={() => set('horario_preferido')(h)}
-                            style={{
-                              padding: '10px 6px', borderRadius: 8, textAlign: 'center',
-                              cursor: ocupado ? 'not-allowed' : 'pointer',
-                              border: `2px solid ${seleccionado ? '#4f46e5' : ocupado ? '#f0f0f0' : '#e5e7eb'}`,
-                              background: seleccionado ? '#eef2ff' : ocupado ? '#f9fafb' : '#fff',
-                              color: seleccionado ? '#4f46e5' : ocupado ? '#d1d5db' : '#374151',
-                              fontSize: 13, fontWeight: seleccionado ? 600 : 400,
-                              transition: 'all 0.15s',
-                            }}
-                          >
-                            <div>{h}</div>
-                            {ocupado && <div style={{ fontSize: 9, marginTop: 3, color: '#d1d5db' }}>No disp.</div>}
-                          </button>
-                        );
-                      })}
+                    <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: 8, padding: 8, marginTop: 8 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
+                        {HORARIOS.map((h) => {
+                          const ocupado = ocupados.includes(h);
+                          const seleccionado = form.horario_preferido === h;
+                          return (
+                            <button
+                              key={h}
+                              type="button"
+                              disabled={ocupado}
+                              onClick={() => set('horario_preferido')(h)}
+                              style={{
+                                padding: '8px 4px', borderRadius: 6, textAlign: 'center',
+                                cursor: ocupado ? 'not-allowed' : 'pointer',
+                                border: `2px solid ${seleccionado ? '#4f46e5' : ocupado ? '#f0f0f0' : '#e5e7eb'}`,
+                                background: seleccionado ? '#eef2ff' : ocupado ? '#f9fafb' : '#fff',
+                                color: seleccionado ? '#4f46e5' : ocupado ? '#d1d5db' : '#374151',
+                                fontSize: 12, fontWeight: seleccionado ? 600 : 400,
+                                transition: 'all 0.15s',
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              {h}
+                              {ocupado && <div style={{ fontSize: 9, marginTop: 2, color: '#d1d5db' }}>No disp.</div>}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
