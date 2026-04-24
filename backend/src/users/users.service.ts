@@ -11,6 +11,12 @@ export class CreateUsuarioDto {
   nombre_estudio: string;
 }
 
+export class UpdateUsuarioDto {
+  nombre?: string;
+  email?: string;
+  password?: string;
+}
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -36,6 +42,18 @@ export class UsersService {
       email: dto.email,
       password: hash,
     });
+    return this.usuarioRepository.save(usuario);
+  }
+
+  async update(id: number, dto: UpdateUsuarioDto): Promise<Usuario> {
+    const usuario = await this.findById(id);
+    if (dto.nombre) usuario.nombre = dto.nombre;
+    if (dto.email && dto.email !== usuario.email) {
+      const existe = await this.findByEmail(dto.email);
+      if (existe) throw new ConflictException('Ya existe un usuario con ese email');
+      usuario.email = dto.email;
+    }
+    if (dto.password) usuario.password = await bcrypt.hash(dto.password, 10);
     return this.usuarioRepository.save(usuario);
   }
 

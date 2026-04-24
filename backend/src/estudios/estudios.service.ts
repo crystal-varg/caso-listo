@@ -33,6 +33,12 @@ export class EstudiosService {
     return this.estudioRepository.save(estudio);
   }
 
+  async updateByUsuario(usuarioId: number, nombreEstudio: string): Promise<Estudio> {
+    const estudio = await this.findByUsuario(usuarioId);
+    estudio.nombre_estudio = nombreEstudio;
+    return this.estudioRepository.save(estudio);
+  }
+
   private generarSlug(nombre: string): string {
     const base = nombre
       .toLowerCase()
