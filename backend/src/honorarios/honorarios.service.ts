@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Honorario } from './honorario.entity';
 import { Consulta } from '../consultas/consulta.entity';
 import { CreateHonorarioDto, UpdateHonorarioDto } from './honorario.dto';
+import { assertOwnership } from '../common/utils/ownership';
 
 @Injectable()
 export class HonorariosService {
@@ -25,14 +26,14 @@ export class HonorariosService {
   }
 
   async create(usuarioId: number, dto: CreateHonorarioDto): Promise<Honorario> {
-    // Verify consulta belongs to this user
-    const consulta = await this.consultaRepo
-      .createQueryBuilder('c')
-      .innerJoin('c.estudio', 'e')
-      .where('c.id = :id AND e.usuario_id = :userId', { id: dto.consulta_id, userId: usuarioId })
-      .getOne();
-
-    if (!consulta) throw new NotFoundException('Consulta no encontrada o no pertenece a tu estudio');
+    await assertOwnership(
+      this.consultaRepo
+        .createQueryBuilder('c')
+        .innerJoin('c.estudio', 'e')
+        .where('c.id = :id', { id: dto.consulta_id })
+        .andWhere('e.usuario_id = :uid', { uid: usuarioId }),
+      'Consulta no encontrada',
+    );
 
     const honorario = this.honorarioRepo.create({
       monto_total: dto.monto_total,
@@ -40,13 +41,14 @@ export class HonorariosService {
       fecha_vencimiento: dto.fecha_vencimiento,
       consulta_id: dto.consulta_id,
     });
-
     return this.honorarioRepo.save(honorario);
   }
 
   async update(id: number, usuarioId: number, dto: UpdateHonorarioDto): Promise<Honorario> {
     const h = await this.findOneSecure(id, usuarioId);
-    Object.assign(h, dto);
+    if (dto.monto_total !== undefined) h.monto_total = dto.monto_total;
+    if (dto.monto_pagado !== undefined) h.monto_pagado = dto.monto_pagado;
+    if (dto.fecha_vencimiento !== undefined) h.fecha_vencimiento = dto.fecha_vencimiento;
     return this.honorarioRepo.save(h);
   }
 
@@ -56,14 +58,14 @@ export class HonorariosService {
   }
 
   private async findOneSecure(id: number, usuarioId: number): Promise<Honorario> {
-    const h = await this.honorarioRepo
-      .createQueryBuilder('h')
-      .innerJoinAndSelect('h.consulta', 'consulta')
-      .innerJoin('consulta.estudio', 'estudio')
-      .where('h.id = :id AND estudio.usuario_id = :userId', { id, userId: usuarioId })
-      .getOne();
-
-    if (!h) throw new NotFoundException('Honorario no encontrado');
-    return h;
+    return assertOwnership(
+      this.honorarioRepo
+        .createQueryBuilder('h')
+        .innerJoinAndSelect('h.consulta', 'consulta')
+        .innerJoin('consulta.estudio', 'estudio')
+        .where('h.id = :id', { id })
+        .andWhere('estudio.usuario_id = :uid', { uid: usuarioId }),
+      'Honorario no encontrado',
+    );
   }
 }

@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ConsultasModule } from './consultas/consultas.module';
@@ -16,11 +18,10 @@ import { Honorario } from './honorarios/honorario.entity';
 import { Actividad } from './actividad/actividad.entity';
 import { Evento } from './eventos/evento.entity';
 import { Notificacion } from './notificaciones/notificacion.entity';
+import { RefreshToken } from './auth/refresh-token.entity';
 
 const isProd = process.env.NODE_ENV === 'production';
 
-// Railway provee DATABASE_URL automáticamente.
-// En dev usamos variables individuales como fallback.
 function getDbConfig() {
   if (process.env.DATABASE_URL) {
     return {
@@ -30,7 +31,7 @@ function getDbConfig() {
   }
   return {
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT) || 5432,
+    port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASS || 'postgres',
     database: process.env.DB_NAME || 'caso_listo',
@@ -43,10 +44,26 @@ function getDbConfig() {
     TypeOrmModule.forRoot({
       type: 'postgres',
       ...getDbConfig(),
-      entities: [Usuario, Consulta, Estudio, Honorario, Actividad, Evento, Notificacion],
-      synchronize: true, // Railway crea las tablas al primer deploy
+      entities: [
+        Usuario,
+        Consulta,
+        Estudio,
+        Honorario,
+        Actividad,
+        Evento,
+        Notificacion,
+        RefreshToken,
+      ],
+      synchronize: true,
       logging: false,
     }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 15 * 60 * 1000, // 15 min
+        limit: 100,
+      },
+    ]),
     AuthModule,
     UsersModule,
     ConsultasModule,
@@ -56,6 +73,9 @@ function getDbConfig() {
     ActividadModule,
     EventosModule,
     NotificacionesModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}

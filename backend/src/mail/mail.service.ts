@@ -1,9 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { Usuario } from '../users/usuario.entity';
 import { Consulta } from '../consultas/consulta.entity';
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://casolisto.online';
+
+/**
+ * Escape every string interpolated into the outbound HTML. Client-submitted
+ * consulta fields flow straight into the lawyer's inbox — one unescaped `<img>`
+ * and we hand an XSS payload to their mail client.
+ */
+function escapeHtml(input: unknown): string {
+  if (input === null || input === undefined) return '';
+  return String(input)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 const baseHtml = (contenido: string) => `
   <!DOCTYPE html>
@@ -36,23 +51,23 @@ const baseHtml = (contenido: string) => `
 
 @Injectable()
 export class MailService {
+  private readonly logger = new Logger(MailService.name);
   private transporter: nodemailer.Transporter;
 
   constructor() {
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT) || 587,
+      port: parseInt(process.env.SMTP_PORT || '587', 10),
       secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
+      auth: process.env.SMTP_USER
+        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+        : undefined,
     });
   }
 
   private async enviar(to: string, subject: string, html: string): Promise<void> {
     if (!process.env.SMTP_USER) {
-      console.log(`📧 [MAIL SIMULADO] Para: ${to} | Asunto: ${subject}`);
+      this.logger.log(`[MAIL SIMULADO] Para: ${to} | Asunto: ${subject}`);
       return;
     }
     await this.transporter.sendMail({
@@ -70,27 +85,27 @@ export class MailService {
       <h2>Nueva consulta recibida</h2>
       <div class="campo">
         <div class="label">Cliente</div>
-        <div class="valor">${consulta.nombre_cliente}</div>
+        <div class="valor">${escapeHtml(consulta.nombre_cliente)}</div>
       </div>
       <div class="campo">
         <div class="label">Contacto</div>
-        <div class="valor">${consulta.email}${consulta.telefono ? ` · ${consulta.telefono}` : ''}</div>
+        <div class="valor">${escapeHtml(consulta.email)}${consulta.telefono ? ` · ${escapeHtml(consulta.telefono)}` : ''}</div>
       </div>
       ${consulta.urgencia ? `
       <div class="campo">
         <div class="label">Urgencia</div>
-        <div class="valor">${urgenciaEmoji} ${consulta.urgencia.charAt(0).toUpperCase() + consulta.urgencia.slice(1)}</div>
+        <div class="valor">${urgenciaEmoji} ${escapeHtml(consulta.urgencia.charAt(0).toUpperCase() + consulta.urgencia.slice(1))}</div>
       </div>` : ''}
       <div class="campo">
         <div class="label">Mensaje</div>
-        <div class="mensaje">${consulta.mensaje}</div>
+        <div class="mensaje">${escapeHtml(consulta.mensaje)}</div>
       </div>
       <a href="${FRONTEND_URL}/dashboard" class="btn">Ver en el panel →</a>
     `);
 
     await this.enviar(
       abogado.email,
-      `${urgenciaEmoji} Nueva consulta de ${consulta.nombre_cliente}`,
+      `${urgenciaEmoji} Nueva consulta de ${consulta.nombre_cliente.replace(/[\r\n]/g, ' ').slice(0, 80)}`,
       html,
     );
   }
@@ -104,12 +119,12 @@ export class MailService {
     const html = baseHtml(`
       <h2>Recordatorio de agenda</h2>
       <p style="font-size:15px;color:#374151;">
-        Tenés <strong>${tituloEvento}</strong> próximamente para el caso de <strong>${caso}</strong>.
+        Tenés <strong>${escapeHtml(tituloEvento)}</strong> próximamente para el caso de <strong>${escapeHtml(caso)}</strong>.
       </p>
       <a href="${FRONTEND_URL}/dashboard/consultas" class="btn">Ver agenda →</a>
     `);
 
-    await this.enviar(to, `📅 Recordatorio: ${tipoEvento} — ${caso}`, html);
+    await this.enviar(to, `📅 Recordatorio: ${tipoEvento.replace(/[\r\n]/g, ' ')} — ${caso.replace(/[\r\n]/g, ' ').slice(0, 80)}`, html);
   }
 
   async notificarCasoInactivo(
@@ -121,7 +136,7 @@ export class MailService {
     const html = baseHtml(`
       <h2>Caso sin movimiento</h2>
       <p style="font-size:15px;color:#374151;">
-        El caso de <strong>${nombreCliente}</strong> (${caso}) lleva <strong>${dias} días</strong> sin actividad registrada.
+        El caso de <strong>${escapeHtml(nombreCliente)}</strong> (${escapeHtml(caso)}) lleva <strong>${dias} días</strong> sin actividad registrada.
       </p>
       <p style="font-size:14px;color:#6b7280;">
         Ingresá al panel para registrar novedades o retomar el contacto con el cliente.
@@ -129,6 +144,6 @@ export class MailService {
       <a href="${FRONTEND_URL}/dashboard/consultas" class="btn">Ver casos →</a>
     `);
 
-    await this.enviar(to, `⚠️ Seguimiento: ${caso} lleva ${dias} días sin movimiento`, html);
+    await this.enviar(to, `⚠️ Seguimiento: ${caso.replace(/[\r\n]/g, ' ').slice(0, 80)} lleva ${dias} días sin movimiento`, html);
   }
 }

@@ -312,7 +312,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </div>
                 </Link>
                 <div
-                  onClick={() => { setUserMenuOpen(false); logout(); router.push('/'); }}
+                  onClick={async () => { setUserMenuOpen(false); await logout(); router.push('/'); }}
                   style={{ padding: '9px 14px', fontSize: 13, color: '#dc2626', cursor: 'pointer', borderTop: '1px solid #f0f0f0' }}
                 >
                   Cerrar sesión →

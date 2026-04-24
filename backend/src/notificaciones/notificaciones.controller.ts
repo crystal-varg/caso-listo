@@ -1,4 +1,6 @@
-import { Controller, Get, Patch, Post, Param, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller, Get, Patch, Post, Param, Request, UseGuards, ParseIntPipe,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { NotificacionesService } from './notificaciones.service';
 import { NotificationRulesService } from './notification-rules.service';
@@ -16,7 +18,7 @@ export class NotificacionesController {
     return this.notificacionesService.getByUsuario(req.user.id);
   }
 
-  // Must be declared before :id routes to avoid param collision
+  // Must be declared before :id routes to avoid param collision.
   @Post('evaluar')
   evaluar(@Request() req) {
     return this.rulesService.evaluarTodo(req.user.id);
@@ -28,7 +30,10 @@ export class NotificacionesController {
   }
 
   @Patch(':id/leer')
-  marcarLeida(@Request() req, @Param('id') id: string) {
-    return this.notificacionesService.marcarLeido(+id, req.user.id);
+  marcarLeida(
+    @Request() req,
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+  ) {
+    return this.notificacionesService.marcarLeido(id, req.user.id);
   }
 }

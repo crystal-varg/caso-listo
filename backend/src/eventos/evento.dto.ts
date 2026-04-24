@@ -1,37 +1,46 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsInt, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+  IsInt,
+  IsDateString,
+  IsEnum,
+  MaxLength,
+  Min,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+export enum TipoEvento {
+  AUDIENCIA = 'audiencia',
+  VENCIMIENTO = 'vencimiento',
+  RECORDATORIO = 'recordatorio',
+}
 
 export class CreateEventoDto {
-  @IsNotEmpty()
-  @IsString()
+  @IsString() @IsNotEmpty() @MaxLength(200)
   titulo: string;
 
-  @IsOptional()
-  @IsString()
-  tipo?: string;
+  @IsOptional() @IsEnum(TipoEvento)
+  tipo?: TipoEvento;
 
-  @IsNotEmpty()
-  @IsDateString()
+  @IsNotEmpty() @IsDateString()
   fecha: string;
 
-  @IsNotEmpty()
-  @IsInt()
+  @Type(() => Number) @IsInt() @Min(1)
   consulta_id: number;
 }
 
 export class UpdateEventoDto {
-  @IsOptional()
-  @IsString()
+  @IsOptional() @IsString() @MaxLength(200)
   titulo?: string;
 
-  @IsOptional()
-  @IsDateString()
+  @IsOptional() @IsDateString()
   fecha?: string;
 
-  @IsOptional()
-  @IsString()
-  tipo?: string;
+  @IsOptional() @IsEnum(TipoEvento)
+  tipo?: TipoEvento;
 
-  @IsOptional()
-  @IsBoolean()
+  @IsOptional() @IsBoolean()
   completado?: boolean;
 }

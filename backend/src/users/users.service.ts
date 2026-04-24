@@ -1,8 +1,9 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from './usuario.entity';
 import * as bcrypt from 'bcryptjs';
+import { sanitizeText } from '../common/utils/sanitize';
 
 export class CreateUsuarioDto {
   nombre: string;
@@ -36,10 +37,10 @@ export class UsersService {
     const existe = await this.findByEmail(dto.email);
     if (existe) throw new ConflictException('Ya existe un usuario con ese email');
 
-    const hash = await bcrypt.hash(dto.password, 10);
+    const hash = await bcrypt.hash(dto.password, 12);
     const usuario = this.usuarioRepository.create({
-      nombre: dto.nombre,
-      email: dto.email,
+      nombre: sanitizeText(dto.nombre),
+      email: dto.email.toLowerCase(),
       password: hash,
     });
     return this.usuarioRepository.save(usuario);
@@ -47,13 +48,15 @@ export class UsersService {
 
   async update(id: number, dto: UpdateUsuarioDto): Promise<Usuario> {
     const usuario = await this.findById(id);
-    if (dto.nombre) usuario.nombre = dto.nombre;
-    if (dto.email && dto.email !== usuario.email) {
-      const existe = await this.findByEmail(dto.email);
+    if (!usuario) throw new NotFoundException('Usuario no encontrado');
+
+    if (dto.nombre) usuario.nombre = sanitizeText(dto.nombre);
+    if (dto.email && dto.email.toLowerCase() !== usuario.email) {
+      const existe = await this.findByEmail(dto.email.toLowerCase());
       if (existe) throw new ConflictException('Ya existe un usuario con ese email');
-      usuario.email = dto.email;
+      usuario.email = dto.email.toLowerCase();
     }
-    if (dto.password) usuario.password = await bcrypt.hash(dto.password, 10);
+    if (dto.password) usuario.password = await bcrypt.hash(dto.password, 12);
     return this.usuarioRepository.save(usuario);
   }
 

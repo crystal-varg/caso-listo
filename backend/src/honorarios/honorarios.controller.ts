@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Patch, Delete,
-  Body, Param, Request, UseGuards,
+  Body, Param, Request, UseGuards, ParseIntPipe,
 } from '@nestjs/common';
 import { HonorariosService } from './honorarios.service';
 import { CreateHonorarioDto, UpdateHonorarioDto } from './honorario.dto';
@@ -22,12 +22,19 @@ export class HonorariosController {
   }
 
   @Patch(':id')
-  update(@Request() req, @Param('id') id: string, @Body() dto: UpdateHonorarioDto) {
-    return this.honorariosService.update(+id, req.user.id, dto);
+  update(
+    @Request() req,
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+    @Body() dto: UpdateHonorarioDto,
+  ) {
+    return this.honorariosService.update(id, req.user.id, dto);
   }
 
   @Delete(':id')
-  remove(@Request() req, @Param('id') id: string) {
-    return this.honorariosService.remove(+id, req.user.id);
+  remove(
+    @Request() req,
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+  ) {
+    return this.honorariosService.remove(id, req.user.id);
   }
 }

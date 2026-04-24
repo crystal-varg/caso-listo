@@ -1,4 +1,7 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller, Get, Post, Patch, Delete,
+  Body, Param, Query, Request, UseGuards, ParseIntPipe,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { EventosService } from './eventos.service';
 import { CreateEventoDto, UpdateEventoDto } from './evento.dto';
@@ -10,7 +13,8 @@ export class EventosController {
 
   @Get()
   findAll(@Request() req, @Query('consulta_id') consultaId?: string) {
-    return this.eventosService.findByUsuario(req.user.id, consultaId ? +consultaId : undefined);
+    const id = consultaId ? parseInt(consultaId, 10) : undefined;
+    return this.eventosService.findByUsuario(req.user.id, isNaN(id as number) ? undefined : id);
   }
 
   @Post()
@@ -19,12 +23,19 @@ export class EventosController {
   }
 
   @Patch(':id')
-  update(@Request() req, @Param('id') id: string, @Body() dto: UpdateEventoDto) {
-    return this.eventosService.update(+id, req.user.id, dto);
+  update(
+    @Request() req,
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+    @Body() dto: UpdateEventoDto,
+  ) {
+    return this.eventosService.update(id, req.user.id, dto);
   }
 
   @Delete(':id')
-  remove(@Request() req, @Param('id') id: string) {
-    return this.eventosService.remove(+id, req.user.id);
+  remove(
+    @Request() req,
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+  ) {
+    return this.eventosService.remove(id, req.user.id);
   }
 }

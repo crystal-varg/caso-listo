@@ -6,39 +6,78 @@ import {
   Body,
   UseGuards,
   Request,
+  Response,
   HttpCode,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import { Response as ExpressResponse, Request as ExpressRequest } from 'express';
+import { IsEmail, IsNotEmpty, MinLength, MaxLength, IsOptional, Matches } from 'class-validator';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { UsersService, UpdateUsuarioDto } from '../users/users.service';
-import { IsEmail, IsNotEmpty, MinLength, IsOptional } from 'class-validator';
+import { UsersService } from '../users/users.service';
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  accessCookieOptions,
+  refreshCookieOptions,
+  clearAccessCookieOptions,
+  clearRefreshCookieOptions,
+} from './cookie.config';
+import { sanitizeText } from '../common/utils/sanitize';
 
 class LoginDto {
-  @IsEmail()
+  @IsEmail() @MaxLength(254)
   email: string;
 
-  @IsNotEmpty()
+  @IsNotEmpty() @MaxLength(128)
   password: string;
 }
 
 class RegisterDto {
-  @IsNotEmpty()
+  @IsNotEmpty() @MaxLength(120)
   nombre: string;
 
-  @IsEmail()
+  @IsEmail() @MaxLength(254)
   email: string;
 
-  @MinLength(6)
+  @MinLength(8) @MaxLength(128)
+  // At least one letter and one digit — cheap password strength floor.
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d).+$/, {
+    message: 'La contraseña debe contener al menos una letra y un número.',
+  })
   password: string;
 
-  @IsNotEmpty()
+  @IsNotEmpty() @MaxLength(120)
   nombre_estudio: string;
 }
 
 class UpdateProfileDto {
-  @IsOptional() @IsNotEmpty() nombre?: string;
-  @IsOptional() @IsEmail() email?: string;
-  @IsOptional() @MinLength(6) password?: string;
+  @IsOptional() @IsNotEmpty() @MaxLength(120)
+  nombre?: string;
+
+  @IsOptional() @IsEmail() @MaxLength(254)
+  email?: string;
+
+  @IsOptional() @MinLength(8) @MaxLength(128)
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d).+$/, {
+    message: 'La contraseña debe contener al menos una letra y un número.',
+  })
+  password?: string;
+}
+
+function setAuthCookies(
+  res: ExpressResponse,
+  accessToken: string,
+  refreshToken: string,
+): void {
+  res.cookie(ACCESS_TOKEN_COOKIE, accessToken, accessCookieOptions());
+  res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, refreshCookieOptions());
+}
+
+function clearAuthCookies(res: ExpressResponse): void {
+  res.clearCookie(ACCESS_TOKEN_COOKIE, clearAccessCookieOptions());
+  res.clearCookie(REFRESH_TOKEN_COOKIE, clearRefreshCookieOptions());
 }
 
 @Controller('auth')
@@ -50,13 +89,62 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto.email, dto.password);
+  @Throttle({ default: { limit: 5, ttl: 15 * 60 * 1000 } })
+  async login(
+    @Body() dto: LoginDto,
+    @Response({ passthrough: true }) res: ExpressResponse,
+  ) {
+    const result = await this.authService.login(dto.email, dto.password);
+    setAuthCookies(res, result.accessToken, result.refreshToken);
+    return { usuario: result.usuario, estudio: result.estudio };
   }
 
   @Post('register')
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  @Throttle({ default: { limit: 10, ttl: 60 * 60 * 1000 } })
+  async register(
+    @Body() dto: RegisterDto,
+    @Response({ passthrough: true }) res: ExpressResponse,
+  ) {
+    const sanitized = {
+      ...dto,
+      nombre: sanitizeText(dto.nombre),
+      nombre_estudio: sanitizeText(dto.nombre_estudio),
+    };
+    const result = await this.authService.register(sanitized);
+    setAuthCookies(res, result.accessToken, result.refreshToken);
+    return { usuario: result.usuario, estudio: result.estudio };
+  }
+
+  @Post('refresh')
+  @HttpCode(200)
+  @SkipThrottle() // separate limiter below
+  @Throttle({ default: { limit: 60, ttl: 15 * 60 * 1000 } })
+  async refresh(
+    @Request() req: ExpressRequest,
+    @Response({ passthrough: true }) res: ExpressResponse,
+  ) {
+    if (req.headers['authorization']) {
+      throw new UnauthorizedException('Bearer authentication is not supported.');
+    }
+    const raw = req.cookies?.[REFRESH_TOKEN_COOKIE];
+    if (!raw || typeof raw !== 'string') {
+      throw new UnauthorizedException('Refresh token ausente.');
+    }
+    const { accessToken, refreshToken } = await this.authService.refresh(raw);
+    setAuthCookies(res, accessToken, refreshToken);
+    return { ok: true };
+  }
+
+  @Post('logout')
+  @HttpCode(204)
+  async logout(
+    @Request() req: ExpressRequest,
+    @Response({ passthrough: true }) res: ExpressResponse,
+  ) {
+    const raw = req.cookies?.[REFRESH_TOKEN_COOKIE];
+    await this.authService.logout(typeof raw === 'string' ? raw : undefined);
+    clearAuthCookies(res);
+    return;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -67,7 +155,22 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
-  updateProfile(@Request() req, @Body() dto: UpdateProfileDto) {
-    return this.usersService.update(req.user.id, dto);
+  async updateProfile(@Request() req, @Body() dto: UpdateProfileDto) {
+    const sanitized: UpdateProfileDto = { ...dto };
+    if (sanitized.nombre) sanitized.nombre = sanitizeText(sanitized.nombre);
+    const updated = await this.usersService.update(req.user.id, sanitized);
+    return { id: updated.id, nombre: updated.nombre, email: updated.email };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout-all')
+  @HttpCode(204)
+  async logoutAll(
+    @Request() req,
+    @Response({ passthrough: true }) res: ExpressResponse,
+  ) {
+    await this.authService.logoutAll(req.user.id);
+    clearAuthCookies(res);
+    return;
   }
 }

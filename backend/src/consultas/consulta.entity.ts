@@ -26,24 +26,30 @@ export enum FueroConsulta {
   SIN_DEFINIR = 'Sin definir',
 }
 
+export enum UrgenciaConsulta {
+  BAJA = 'baja',
+  MEDIA = 'media',
+  ALTA = 'alta',
+}
+
 @Entity('consultas')
 export class Consulta {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ length: 120 })
   nombre_cliente: string;
 
-  @Column()
+  @Column({ length: 254 })
   email: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, length: 32 })
   telefono: string;
 
   @Column({ type: 'text' })
   mensaje: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, length: 80 })
   tipo_caso: string;
 
   @Column({
@@ -60,20 +66,19 @@ export class Consulta {
   })
   fuero: FueroConsulta;
 
-  @Column({ nullable: true })
-  urgencia: string; // baja | media | alta
+  @Column({ nullable: true, length: 16 })
+  urgencia: string;
 
-  @Column({ nullable: true })
-  fecha_preferida: string; // YYYY-MM-DD
+  @Column({ nullable: true, length: 10 })
+  fecha_preferida: string;
 
-  @Column({ nullable: true })
-  horario_preferido: string; // 9:00 | 11:00 | 14:00 | 16:00 | 18:00
+  @Column({ nullable: true, length: 16 })
+  horario_preferido: string;
 
-  // null = pendiente | 'faltante' = no tiene | <filename> = subido
-  @Column({ nullable: true })
+  @Column({ nullable: true, length: 120 })
   dni_archivo: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, length: 120 })
   docs_archivo: string;
 
   @ManyToOne(() => Estudio, (estudio) => estudio.consultas)

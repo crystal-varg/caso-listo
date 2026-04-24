@@ -1,21 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notificacion } from './notificacion.entity';
 import { Evento } from '../eventos/evento.entity';
 import { Honorario } from '../honorarios/honorario.entity';
 import { Consulta } from '../consultas/consulta.entity';
 import { NotificacionesService } from './notificaciones.service';
 import { MailService } from '../mail/mail.service';
-
-function generarWaLink(telefono: string | null, mensaje: string): string | null {
-  if (!telefono) return null;
-  const tel = telefono.replace(/\D/g, '');
-  return `https://wa.me/${tel}?text=${encodeURIComponent(mensaje)}`;
-}
+import { buildWaLink } from '../common/utils/whatsapp';
 
 @Injectable()
 export class NotificationRulesService {
+  private readonly logger = new Logger(NotificationRulesService.name);
+
   constructor(
     private notificacionesService: NotificacionesService,
     private mailService: MailService,
@@ -28,17 +24,13 @@ export class NotificationRulesService {
   ) {}
 
   async evaluarTodo(usuarioId: number): Promise<{ creadas: number }> {
-    let creadas = 0;
     const [a, b, c] = await Promise.all([
       this.evaluarEventosProximos(usuarioId),
       this.evaluarCasosInactivos(usuarioId),
       this.evaluarHonorariosVencidos(usuarioId),
     ]);
-    creadas = a + b + c;
-    return { creadas };
+    return { creadas: a + b + c };
   }
-
-  // ── 1. Eventos dentro de las próximas 24h ──────────────────────────────────
 
   private async evaluarEventosProximos(usuarioId: number): Promise<number> {
     const ahora = new Date();
@@ -77,15 +69,12 @@ export class NotificationRulesService {
       });
       creadas++;
 
-      // Email
       await this.mailService
         .notificarEventoProximo(ev.consulta.email, titulo, ev.titulo, caso)
-        .catch(() => {});
+        .catch((err) => this.logger.error(`mail evento_proximo: ${err?.message}`, err?.stack));
     }
     return creadas;
   }
-
-  // ── 2. Casos sin movimiento ────────────────────────────────────────────────
 
   private async evaluarCasosInactivos(usuarioId: number): Promise<number> {
     const rows: Array<{
@@ -110,7 +99,6 @@ export class NotificationRulesService {
 
     let creadas = 0;
     for (const row of rows) {
-      // Deduplicate per window: re-notify at 30, 60, 90 day marks (window = 28 days)
       const ya = await this.notificacionesService.existe(usuarioId, 'caso_sin_movimiento', {
         consultaId: row.id,
         ventanaDias: 28,
@@ -121,7 +109,6 @@ export class NotificationRulesService {
       const titulo = 'Caso sin movimiento';
       const mensaje = `El caso de ${caso} lleva ${row.dias} días sin actividad.`;
 
-      // Always in_app
       await this.notificacionesService.crear({
         usuario_id: usuarioId,
         consulta_id: row.id,
@@ -132,15 +119,13 @@ export class NotificationRulesService {
       });
       creadas++;
 
-      // Email at 30, 60, 90 days
       await this.mailService
         .notificarCasoInactivo(row.email, row.nombre_cliente, caso, row.dias)
-        .catch(() => {});
+        .catch((err) => this.logger.error(`mail caso_inactivo: ${err?.message}`, err?.stack));
 
-      // WhatsApp link in a second in_app notification at 90+ days
       if (row.dias >= 90 && row.telefono) {
         const waMsg = `Hola ${row.nombre_cliente.split(' ')[0]}, queríamos retomar el contacto sobre tu caso de ${caso}. ¿Podemos coordinar?`;
-        const waLink = generarWaLink(row.telefono, waMsg);
+        const waLink = buildWaLink(row.telefono, waMsg);
         if (waLink) {
           await this.notificacionesService.crear({
             usuario_id: usuarioId,
@@ -156,8 +141,6 @@ export class NotificationRulesService {
     }
     return creadas;
   }
-
-  // ── 3. Honorarios vencidos ─────────────────────────────────────────────────
 
   private async evaluarHonorariosVencidos(usuarioId: number): Promise<number> {
     const hoy = new Date().toISOString().split('T')[0];
@@ -183,7 +166,7 @@ export class NotificationRulesService {
       const caso = h.consulta.tipo_caso || cliente;
       const restante = h.monto_total - h.monto_pagado;
       const waMsg = `Hola ${cliente.split(' ')[0]}, te escribo por el honorario pendiente del caso "${caso}" ($${Math.round(restante).toLocaleString('es-AR')}). Cuando puedas lo coordinamos.`;
-      const waLink = generarWaLink(h.consulta.telefono, waMsg);
+      const waLink = buildWaLink(h.consulta.telefono, waMsg);
 
       await this.notificacionesService.crear({
         usuario_id: usuarioId,

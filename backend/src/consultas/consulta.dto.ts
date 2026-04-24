@@ -1,57 +1,68 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsEnum } from 'class-validator';
-import { EstadoConsulta, FueroConsulta } from './consulta.entity';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsEnum,
+  MaxLength,
+  MinLength,
+  Matches,
+} from 'class-validator';
+import {
+  EstadoConsulta,
+  FueroConsulta,
+  UrgenciaConsulta,
+} from './consulta.entity';
 
+/**
+ * DTOs are treated as a declarative security contract. `whitelist: true` drops
+ * any field not listed here, and `forbidNonWhitelisted: true` rejects the whole
+ * request if an unknown field is sent.
+ *
+ * Every string has an explicit `@MaxLength`. Never trust that the DB column
+ * length will protect you — class-validator runs first and produces a proper
+ * 400, while the DB would throw a 500.
+ */
 export class CreateConsultaDto {
-  @IsNotEmpty({ message: 'El nombre es requerido' })
-  @IsString()
+  @IsString() @IsNotEmpty() @MinLength(2) @MaxLength(120)
   nombre_cliente: string;
 
-  @IsEmail({}, { message: 'Email inválido' })
+  @IsEmail() @MaxLength(254)
   email: string;
 
-  @IsOptional()
-  @IsString()
+  @IsOptional() @IsString() @MaxLength(32)
+  @Matches(/^[0-9+()\-\s.]{0,32}$/, { message: 'Teléfono con caracteres no permitidos.' })
   telefono?: string;
 
-  @IsNotEmpty({ message: 'El mensaje es requerido' })
-  @IsString()
+  @IsString() @IsNotEmpty() @MinLength(10) @MaxLength(4000)
   mensaje: string;
 
-  @IsOptional()
-  @IsString()
+  @IsOptional() @IsString() @MaxLength(80)
   tipo_caso?: string;
 
-  @IsOptional()
-  @IsString()
-  urgencia?: string;
+  @IsOptional() @IsEnum(UrgenciaConsulta)
+  urgencia?: UrgenciaConsulta;
 
-  @IsOptional()
-  @IsString()
+  @IsOptional() @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/)
   fecha_preferida?: string;
 
-  @IsOptional()
-  @IsString()
+  @IsOptional() @IsString() @MaxLength(16)
   horario_preferido?: string;
 
-  @IsOptional()
-  @IsString()
-  dni_estado?: string; // 'pendiente' | 'faltante'
+  @IsOptional() @IsString() @MaxLength(16)
+  dni_estado?: string;
 
-  @IsOptional()
-  @IsString()
-  docs_estado?: string; // 'pendiente' | 'faltante'
+  @IsOptional() @IsString() @MaxLength(16)
+  docs_estado?: string;
 }
 
 export class UpdateConsultaDto {
-  @IsOptional()
-  @IsEnum(EstadoConsulta)
+  @IsOptional() @IsEnum(EstadoConsulta)
   estado?: EstadoConsulta;
 
-  @IsOptional()
-  @IsEnum(FueroConsulta)
+  @IsOptional() @IsEnum(FueroConsulta)
   fuero?: FueroConsulta;
 
-  @IsOptional()
-  @IsString()
+  @IsOptional() @IsString() @MaxLength(80)
   tipo_caso?: string;
 }

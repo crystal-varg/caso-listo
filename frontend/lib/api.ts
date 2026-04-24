@@ -1,29 +1,47 @@
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://caso-listo-production.up.railway.app/api';
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? 'https://caso-listo-production.up.railway.app/api';
 
-function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('caso_listo_token');
-}
-
-async function request<T>(
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
-  const token = getToken();
+/**
+ * The backend enforces cookie-only authentication. We just set
+ * `credentials: 'include'` and let the browser attach the httpOnly cookies;
+ * JavaScript cannot read or modify them.
+ */
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  const res = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers,
+    credentials: 'include',
+  });
+
+  if (res.status === 401) {
+    // Access token expired or missing — try a single silent refresh.
+    if (path !== '/auth/refresh' && !options.headers?.['x-refreshed']) {
+      const refreshed = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (refreshed.ok) {
+        return request<T>(path, {
+          ...options,
+          headers: { ...headers, 'x-refreshed': '1' },
+        });
+      }
+    }
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: 'Error desconocido' }));
     throw new Error(err.message || `Error ${res.status}`);
   }
 
-  if (res.status === 204 || res.headers.get('content-length') === '0') return undefined as T;
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return undefined as T;
+  }
   return res.json();
 }
 

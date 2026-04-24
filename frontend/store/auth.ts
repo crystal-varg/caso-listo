@@ -16,11 +16,10 @@ interface Estudio {
 interface AuthState {
   usuario: Usuario | null;
   estudio: Estudio | null;
-  token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   hydrate: () => Promise<void>;
 }
 
@@ -31,18 +30,25 @@ interface RegisterData {
   nombre_estudio: string;
 }
 
+/**
+ * The auth token is never stored in JavaScript. It lives in httpOnly cookies
+ * set by the backend. This store holds only the user-visible profile state so
+ * the UI can render the current user. XSS cannot exfiltrate credentials because
+ * JS has no path to read the cookie.
+ */
 export const useAuthStore = create<AuthState>((set) => ({
   usuario: null,
   estudio: null,
-  token: null,
   loading: false,
 
   login: async (email, password) => {
     set({ loading: true });
     try {
-      const data = await api.post<any>('/auth/login', { email, password });
-      localStorage.setItem('caso_listo_token', data.access_token);
-      set({ usuario: data.usuario, estudio: data.estudio, token: data.access_token });
+      const data = await api.post<{ usuario: Usuario; estudio: Estudio }>(
+        '/auth/login',
+        { email, password },
+      );
+      set({ usuario: data.usuario, estudio: data.estudio });
     } finally {
       set({ loading: false });
     }
@@ -51,27 +57,37 @@ export const useAuthStore = create<AuthState>((set) => ({
   register: async (formData) => {
     set({ loading: true });
     try {
-      const data = await api.post<any>('/auth/register', formData);
-      localStorage.setItem('caso_listo_token', data.access_token);
-      set({ usuario: data.usuario, estudio: data.estudio, token: data.access_token });
+      const data = await api.post<{ usuario: Usuario; estudio: Estudio }>(
+        '/auth/register',
+        formData,
+      );
+      set({ usuario: data.usuario, estudio: data.estudio });
     } finally {
       set({ loading: false });
     }
   },
 
-  logout: () => {
-    localStorage.removeItem('caso_listo_token');
-    set({ usuario: null, estudio: null, token: null });
+  logout: async () => {
+    try {
+      await api.post('/auth/logout', {});
+    } catch {
+      // Logout is best-effort — clear client state regardless.
+    }
+    set({ usuario: null, estudio: null });
   },
 
   hydrate: async () => {
-    const token = localStorage.getItem('caso_listo_token');
-    if (!token) return;
     try {
-      const data = await api.get<any>('/auth/me');
-      set({ usuario: data.usuario, estudio: data.estudio, token });
+      const data = await api.get<{ usuario: Usuario | null; estudio: Estudio | null }>(
+        '/auth/me',
+      );
+      if (data?.usuario) {
+        set({ usuario: data.usuario, estudio: data.estudio });
+      } else {
+        set({ usuario: null, estudio: null });
+      }
     } catch {
-      localStorage.removeItem('caso_listo_token');
+      set({ usuario: null, estudio: null });
     }
   },
 }));

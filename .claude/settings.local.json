@@ -4,7 +4,11 @@
       "mcp__claude_ai_Figma__use_figma",
       "mcp__claude_ai_Figma__get_design_context",
       "Bash(npx tsc *)",
-      "Bash(./node_modules/.bin/tsc --noEmit)"
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "PowerShell(git add backend/src/app.module.ts backend/src/honorarios/ frontend/app/dashboard/honorarios/page.tsx frontend/lib/api.ts)",
+      "PowerShell(git add backend/src/actividad/ backend/src/eventos/ backend/src/app.module.ts backend/src/consultas/consultas.service.ts backend/src/consultas/consultas.module.ts backend/src/consultas/consultas.controller.ts)",
+      "PowerShell(git commit -m $msg)",
+      "PowerShell(git push origin main)"
     ]
   }
 }

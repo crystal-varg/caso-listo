@@ -1,41 +1,105 @@
 import 'reflect-metadata';
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import helmet from 'helmet';
+import * as cookieParser from 'cookie-parser';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { validateEnv } from './config/env.validation';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Fail fast on bad configuration — before Nest tries to start any module.
+  const env = validateEnv();
 
-  // Soporta dev local + Vercel (cualquier subdominio .vercel.app) + dominio propio
-  const allowedOrigins = [
-    'http://localhost:3000',
-    process.env.FRONTEND_URL,
-  ].filter(Boolean);
-
-  app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // Postman / server-to-server
-      const ok =
-        allowedOrigins.includes(origin) ||
-        origin.endsWith('.vercel.app') ||
-        origin.endsWith('.railway.app');
-      if (ok) return callback(null, true);
-      callback(new Error(`Origen no permitido: ${origin}`));
-    },
-    credentials: true,
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    // We handle error serialization through AllExceptionsFilter, so leave
+    // nest's default logger enabled but ready to be narrowed in production.
+    logger: env.NODE_ENV === 'production' ? ['error', 'warn', 'log'] : ['debug', 'log', 'error', 'warn'],
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
+  // Trust only proxies we explicitly list. Railway fronts the app with its
+  // own load balancer — the first hop is trusted, nothing beyond it is.
+  if (env.TRUSTED_PROXIES.length > 0) {
+    app.set('trust proxy', env.TRUSTED_PROXIES);
+  } else {
+    // When no explicit proxies are configured, trust exactly 1 hop.
+    // This prevents arbitrary X-Forwarded-For values from untrusted clients.
+    app.set('trust proxy', 1);
+  }
+
+  // ── Cookies ────────────────────────────────────────────────────────────────
+  app.use(cookieParser());
+
+  // ── Security headers ───────────────────────────────────────────────────────
+  app.use(
+    helmet({
+      // Strict CSP for a REST API — no inline scripts, no eval, no remote origins.
+      contentSecurityPolicy: {
+        useDefaults: false,
+        directives: {
+          defaultSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+          baseUri: ["'none'"],
+          formAction: ["'none'"],
+        },
+      },
+      crossOriginEmbedderPolicy: false, // file-serving endpoint compatibility
+      crossOriginResourcePolicy: { policy: 'same-site' },
+      crossOriginOpenerPolicy: { policy: 'same-origin' },
+      referrerPolicy: { policy: 'no-referrer' },
+      hsts: {
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+        includeSubDomains: true,
+        preload: false,
+      },
+      frameguard: { action: 'deny' },
+      noSniff: true,
+      xssFilter: true,
     }),
   );
 
+  // ── CORS ───────────────────────────────────────────────────────────────────
+  app.enableCors({
+    origin: (origin, callback) => {
+      // Allow same-origin / Postman / server-to-server (no Origin header).
+      if (!origin) return callback(null, true);
+      if (env.ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      // Do not echo the origin back — simply reject.
+      callback(new Error(`Origen no permitido: ${origin}`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Accept', 'Origin', 'X-Requested-With'],
+    maxAge: 600,
+  });
+
+  // ── Global validation ──────────────────────────────────────────────────────
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      stopAtFirstError: true,
+      transformOptions: { enableImplicitConversion: false },
+    }),
+  );
+
+  // ── Response serialization — strips @Exclude()-marked fields (e.g., password) ─
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
+  // ── Global exception filter — homogeneous error shape, no stack leakage ───
+  app.useGlobalFilters(new AllExceptionsFilter());
+
   app.setGlobalPrefix('api');
 
-  const port = process.env.PORT || 3001;
-  await app.listen(port, '0.0.0.0'); // 0.0.0.0 necesario para Railway
-  console.log(`🚀 CasoListo Backend en puerto ${port}`);
+  await app.listen(env.PORT, '0.0.0.0'); // 0.0.0.0 required for Railway
+  // eslint-disable-next-line no-console
+  console.log(`🚀 CasoListo Backend en puerto ${env.PORT} (${env.NODE_ENV})`);
 }
-bootstrap();
+
+bootstrap().catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error('Fatal bootstrap error:', err);
+  process.exit(1);
+});

@@ -6,6 +6,7 @@ import {
   OneToOne,
   JoinColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { Usuario } from '../users/usuario.entity';
 import { Consulta } from '../consultas/consulta.entity';
@@ -15,11 +16,16 @@ export class Estudio {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ length: 120 })
   nombre_estudio: string;
 
-  @Column({ nullable: true })
-  slug: string; // URL única para el formulario público: /consulta/slug
+  /**
+   * Public URL slug. Unique, indexed — DB-level enforcement prevents
+   * race-condition collisions during slug generation retries.
+   */
+  @Index('idx_estudio_slug', { unique: true })
+  @Column({ length: 80, unique: true })
+  slug: string;
 
   @OneToOne(() => Usuario)
   @JoinColumn({ name: 'usuario_id' })

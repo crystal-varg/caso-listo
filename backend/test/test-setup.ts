@@ -1,0 +1,10 @@
+// Populate env vars required by validateEnv() before any module loads them.
+process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test-jwt-secret-at-least-32-chars-long-xxxxx';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-at-least-32-chars-long-xxxxx';
+process.env.ALLOWED_ORIGINS = 'http://localhost:3000';
+process.env.DB_HOST = process.env.DB_HOST || 'localhost';
+process.env.DB_PORT = process.env.DB_PORT || '5432';
+process.env.DB_USER = process.env.DB_USER || 'postgres';
+process.env.DB_PASS = process.env.DB_PASS || 'postgres';
+process.env.DB_NAME = process.env.DB_NAME || 'caso_listo_test';

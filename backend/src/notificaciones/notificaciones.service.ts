@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notificacion } from './notificacion.entity';
+import { sanitizeText } from '../common/utils/sanitize';
+import { safeWaLink } from '../common/utils/whatsapp';
 
 interface CrearDto {
   usuario_id: number;
@@ -23,7 +25,19 @@ export class NotificacionesService {
   ) {}
 
   async crear(dto: CrearDto): Promise<Notificacion> {
-    const n = this.repo.create(dto);
+    const n = this.repo.create({
+      usuario_id: dto.usuario_id,
+      consulta_id: dto.consulta_id ?? null,
+      tipo: dto.tipo,
+      canal: dto.canal,
+      titulo: sanitizeText(dto.titulo),
+      mensaje: sanitizeText(dto.mensaje),
+      referencia_id: dto.referencia_id ?? null,
+      referencia_tipo: dto.referencia_tipo ?? null,
+      // Silently drop malformed WhatsApp URLs — never persist an untrusted link
+      // that the UI will later render as clickable.
+      wa_link: safeWaLink(dto.wa_link),
+    });
     return this.repo.save(n);
   }
 
