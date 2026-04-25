@@ -13,11 +13,15 @@ export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const ACCESS_TOKEN_JWT_EXPIRES = '15m';
 
 function baseCookie(maxAgeMs: number): CookieOptions {
-  const isProd = process.env.NODE_ENV === 'production';
   return {
     httpOnly: true,
-    secure: isProd, // allow http during local dev
-    sameSite: 'strict',
+    // sameSite: 'none' + secure: true is the only combination that lets the
+    // browser send the cookie on cross-origin requests (frontend on
+    // casolisto.online → backend on caso-listo-production.up.railway.app).
+    // 'none' requires 'secure', so we set both unconditionally. Modern browsers
+    // exempt localhost from the HTTPS requirement, so local dev still works.
+    sameSite: 'none',
+    secure: true,
     maxAge: maxAgeMs,
     domain: process.env.COOKIE_DOMAIN || undefined,
     path: '/',

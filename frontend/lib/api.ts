@@ -1,5 +1,13 @@
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'https://caso-listo-production.up.railway.app/api';
+/**
+ * Always hit the same-origin Next.js proxy at /api/*. The Next.js
+ * `rewrites()` config in next.config.ts forwards these requests to the real
+ * backend on Railway. This keeps auth cookies first-party (casolisto.online)
+ * and avoids browser blocks on third-party cookies.
+ *
+ * Do NOT switch this back to NEXT_PUBLIC_API_URL — the env var is now only
+ * read by the Next.js rewrite destination, not by the frontend bundle.
+ */
+export const API_URL = '/api';
 
 /**
  * The backend enforces cookie-only authentication. We just set
