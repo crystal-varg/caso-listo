@@ -19,6 +19,7 @@ import { Actividad } from './actividad/actividad.entity';
 import { Evento } from './eventos/evento.entity';
 import { Notificacion } from './notificaciones/notificacion.entity';
 import { RefreshToken } from './auth/refresh-token.entity';
+import { PasswordReset } from './auth/password-reset.entity';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -53,6 +54,7 @@ function getDbConfig() {
         Evento,
         Notificacion,
         RefreshToken,
+        PasswordReset,
       ],
       synchronize: true,
       logging: false,

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { Usuario } from '../users/usuario.entity';
 import { Consulta } from '../consultas/consulta.entity';
 
@@ -7,8 +7,8 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'https://casolisto.online';
 
 /**
  * Escape every string interpolated into the outbound HTML. Client-submitted
- * consulta fields flow straight into the lawyer's inbox — one unescaped `<img>`
- * and we hand an XSS payload to their mail client.
+ * fields flow straight into the lawyer's inbox — one unescaped `<img>` and
+ * we hand an XSS payload to their mail client.
  */
 function escapeHtml(input: unknown): string {
   if (input === null || input === undefined) return '';
@@ -37,6 +37,7 @@ const baseHtml = (contenido: string) => `
       .mensaje { background: #f8f8ff; border-left: 3px solid #4f46e5; padding: 14px 16px; border-radius: 4px; font-size: 14px; color: #333; line-height: 1.6; }
       .btn { display: inline-block; background: #4f46e5; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 24px; }
       .footer { margin-top: 28px; font-size: 12px; color: #aaa; text-align: center; }
+      .raw-link { word-break: break-all; font-size: 12px; color: #6b7280; margin-top: 16px; }
     </style>
   </head>
   <body>
@@ -52,30 +53,42 @@ const baseHtml = (contenido: string) => `
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private transporter: nodemailer.Transporter;
+  private readonly resend: Resend | null;
 
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587', 10),
-      secure: false,
-      auth: process.env.SMTP_USER
-        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-        : undefined,
-    });
+    const apiKey = process.env.RESEND_API_KEY;
+    this.resend = apiKey ? new Resend(apiKey) : null;
+    if (!apiKey) {
+      this.logger.warn('RESEND_API_KEY no configurada — los emails se omitirán silenciosamente.');
+    } else if (!process.env.MAIL_FROM) {
+      this.logger.warn('MAIL_FROM no configurada — los emails se omitirán silenciosamente.');
+    }
   }
 
-  private async enviar(to: string, subject: string, html: string): Promise<void> {
-    if (!process.env.SMTP_USER) {
-      this.logger.log(`[MAIL SIMULADO] Para: ${to} | Asunto: ${subject}`);
+  /**
+   * Generic send. Errors are logged, not thrown — every caller in this codebase
+   * uses fire-and-forget semantics for email, and a transport failure must not
+   * roll back the application transaction that triggered it.
+   */
+  async sendMail(opts: { to: string; subject: string; html: string }): Promise<void> {
+    const from = process.env.MAIL_FROM;
+    if (!this.resend || !from) {
+      this.logger.log(`[MAIL SIMULADO] Para: ${opts.to} | Asunto: ${opts.subject}`);
       return;
     }
-    await this.transporter.sendMail({
-      from: `"Caso Listo" <${process.env.SMTP_USER}>`,
-      to,
-      subject,
-      html,
-    });
+    try {
+      const { error } = await this.resend.emails.send({
+        from,
+        to: opts.to,
+        subject: opts.subject,
+        html: opts.html,
+      });
+      if (error) {
+        this.logger.error(`Resend error: ${error.message ?? JSON.stringify(error)}`);
+      }
+    } catch (err: any) {
+      this.logger.error(`Resend send failed: ${err?.message}`, err?.stack);
+    }
   }
 
   async notificarNuevaConsulta(abogado: Usuario, consulta: Consulta): Promise<void> {
@@ -103,11 +116,11 @@ export class MailService {
       <a href="${FRONTEND_URL}/dashboard" class="btn">Ver en el panel →</a>
     `);
 
-    await this.enviar(
-      abogado.email,
-      `${urgenciaEmoji} Nueva consulta de ${consulta.nombre_cliente.replace(/[\r\n]/g, ' ').slice(0, 80)}`,
+    await this.sendMail({
+      to: abogado.email,
+      subject: `${urgenciaEmoji} Nueva consulta de ${(consulta.nombre_cliente || '').replace(/[\r\n]/g, ' ').slice(0, 80)}`,
       html,
-    );
+    });
   }
 
   async notificarEventoProximo(
@@ -121,10 +134,14 @@ export class MailService {
       <p style="font-size:15px;color:#374151;">
         Tenés <strong>${escapeHtml(tituloEvento)}</strong> próximamente para el caso de <strong>${escapeHtml(caso)}</strong>.
       </p>
-      <a href="${FRONTEND_URL}/dashboard/consultas" class="btn">Ver agenda →</a>
+      <a href="${FRONTEND_URL}/dashboard/agenda" class="btn">Ver agenda →</a>
     `);
 
-    await this.enviar(to, `📅 Recordatorio: ${tipoEvento.replace(/[\r\n]/g, ' ')} — ${caso.replace(/[\r\n]/g, ' ').slice(0, 80)}`, html);
+    await this.sendMail({
+      to,
+      subject: `📅 Recordatorio: ${(tipoEvento || '').replace(/[\r\n]/g, ' ')} — ${(caso || '').replace(/[\r\n]/g, ' ').slice(0, 80)}`,
+      html,
+    });
   }
 
   async notificarCasoInactivo(
@@ -144,6 +161,36 @@ export class MailService {
       <a href="${FRONTEND_URL}/dashboard/consultas" class="btn">Ver casos →</a>
     `);
 
-    await this.enviar(to, `⚠️ Seguimiento: ${caso.replace(/[\r\n]/g, ' ').slice(0, 80)} lleva ${dias} días sin movimiento`, html);
+    await this.sendMail({
+      to,
+      subject: `⚠️ Seguimiento: ${(caso || '').replace(/[\r\n]/g, ' ').slice(0, 80)} lleva ${dias} días sin movimiento`,
+      html,
+    });
+  }
+
+  /**
+   * Password reset email. The URL is built upstream — this service trusts it
+   * to be a https://casolisto.online/reset-password?token=… link with a 64-char
+   * hex token that survived our own validation. We escape it on output anyway.
+   */
+  async notificarPasswordReset(to: string, resetUrl: string): Promise<void> {
+    const html = baseHtml(`
+      <h2>Restablecé tu contraseña</h2>
+      <p style="font-size:15px;color:#374151;">
+        Recibimos una solicitud para restablecer tu contraseña en CasoListo.
+        Hacé clic en el botón para elegir una nueva. El enlace expira en 1 hora.
+      </p>
+      <a href="${escapeHtml(resetUrl)}" class="btn">Restablecer contraseña →</a>
+      <p class="raw-link">Si el botón no funciona, copiá este enlace en tu navegador:<br>${escapeHtml(resetUrl)}</p>
+      <p style="font-size:13px;color:#9ca3af;margin-top:20px;">
+        Si no solicitaste este cambio, ignorá este email — tu contraseña actual seguirá funcionando.
+      </p>
+    `);
+
+    await this.sendMail({
+      to,
+      subject: 'Restablecé tu contraseña en CasoListo',
+      html,
+    });
   }
 }

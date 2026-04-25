@@ -1,8 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService, CreateUsuarioDto } from '../users/users.service';
 import { EstudiosService } from '../estudios/estudios.service';
 import { RefreshTokenService } from './refresh-token.service';
+import { PasswordResetService } from './password-reset.service';
+import { MailService } from '../mail/mail.service';
 import {
   ACCESS_TOKEN_JWT_EXPIRES,
   REFRESH_TOKEN_TTL_MS,
@@ -17,11 +19,15 @@ export interface AuthResult {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private estudiosService: EstudiosService,
     private refreshTokenService: RefreshTokenService,
+    private passwordResetService: PasswordResetService,
+    private mailService: MailService,
   ) {}
 
   private signAccess(usuarioId: number, email: string): string {
@@ -96,5 +102,45 @@ export class AuthService {
         : null,
       estudio,
     };
+  }
+
+  /**
+   * Anti-enumeration: this method always resolves with the same shape (void)
+   * regardless of whether the email is registered. Token issuance and email
+   * sending only happen when a real user matches.
+   */
+  async forgotPassword(email: string): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const usuario = await this.usersService.findByEmail(normalizedEmail);
+    if (!usuario) {
+      this.logger.log(`forgotPassword: no match for email (silent OK).`);
+      return;
+    }
+
+    const { raw } = await this.passwordResetService.issue(usuario.id);
+
+    const FRONTEND_URL = process.env.FRONTEND_URL || 'https://casolisto.online';
+    const resetUrl = `${FRONTEND_URL}/reset-password?token=${encodeURIComponent(raw)}`;
+
+    // Fire-and-forget mail with logged errors — never let a transport failure
+    // block the API response or leak whether the user exists.
+    this.mailService
+      .notificarPasswordReset(usuario.email, resetUrl)
+      .catch((err) =>
+        this.logger.error(`mail password_reset: ${err?.message}`, err?.stack),
+      );
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const usuarioId = await this.passwordResetService.consume(token);
+    if (!usuarioId) {
+      throw new BadRequestException('Token inválido o expirado.');
+    }
+
+    await this.usersService.update(usuarioId, { password: newPassword });
+
+    // Force re-login on every device — a password reset must invalidate any
+    // session that pre-dates the change, including a hypothetical attacker's.
+    await this.refreshTokenService.revokeAllForUser(usuarioId);
   }
 }

@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { Response as ExpressResponse, Request as ExpressRequest } from 'express';
-import { IsEmail, IsNotEmpty, MinLength, MaxLength, IsOptional, Matches } from 'class-validator';
+import { IsEmail, IsNotEmpty, MinLength, MaxLength, IsOptional, Matches, IsString, Length } from 'class-validator';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { UsersService } from '../users/users.service';
@@ -42,7 +42,6 @@ class RegisterDto {
   email: string;
 
   @MinLength(8) @MaxLength(128)
-  // At least one letter and one digit — cheap password strength floor.
   @Matches(/^(?=.*[A-Za-z])(?=.*\d).+$/, {
     message: 'La contraseña debe contener al menos una letra y un número.',
   })
@@ -64,6 +63,23 @@ class UpdateProfileDto {
     message: 'La contraseña debe contener al menos una letra y un número.',
   })
   password?: string;
+}
+
+class ForgotPasswordDto {
+  @IsEmail() @MaxLength(254)
+  email: string;
+}
+
+class ResetPasswordDto {
+  @IsString() @Length(64, 64)
+  @Matches(/^[a-f0-9]{64}$/, { message: 'Token con formato inválido.' })
+  token: string;
+
+  @MinLength(8) @MaxLength(128)
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d).+$/, {
+    message: 'La contraseña debe contener al menos una letra y un número.',
+  })
+  password: string;
 }
 
 function setAuthCookies(
@@ -117,7 +133,7 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(200)
-  @SkipThrottle() // separate limiter below
+  @SkipThrottle()
   @Throttle({ default: { limit: 60, ttl: 15 * 60 * 1000 } })
   async refresh(
     @Request() req: ExpressRequest,
@@ -145,6 +161,33 @@ export class AuthController {
     await this.authService.logout(typeof raw === 'string' ? raw : undefined);
     clearAuthCookies(res);
     return;
+  }
+
+  /**
+   * Always returns the same response whether the email exists or not — the
+   * actual success path runs asynchronously via fire-and-forget email send.
+   */
+  @Post('forgot-password')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 3, ttl: 15 * 60 * 1000 } })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.authService.forgotPassword(dto.email);
+    return {
+      ok: true,
+      mensaje:
+        'Si el email está registrado, recibirás un enlace para restablecer tu contraseña.',
+    };
+  }
+
+  @Post('reset-password')
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 15 * 60 * 1000 } })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto.token, dto.password);
+    return {
+      ok: true,
+      mensaje: 'Contraseña actualizada. Iniciá sesión nuevamente.',
+    };
   }
 
   @UseGuards(JwtAuthGuard)
