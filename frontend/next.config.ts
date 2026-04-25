@@ -7,14 +7,15 @@ const nextConfig: NextConfig = {
    * the cross-domain cookie between casolisto.online and *.railway.app gets
    * blocked by browser third-party cookie restrictions.
    *
-   * NEXT_PUBLIC_API_URL must be set at build time to the backend's /api
-   * origin (e.g. https://caso-listo-production.up.railway.app/api).
+   * The destination is hardcoded because NEXT_PUBLIC_API_URL is not reliably
+   * available during Railway's Docker build phase, which would silently
+   * produce `undefined/:path*` and break every API call in production.
    */
   async rewrites() {
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.NEXT_PUBLIC_API_URL}/:path*`,
+        destination: 'https://caso-listo-production.up.railway.app/api/:path*',
       },
     ];
   },
