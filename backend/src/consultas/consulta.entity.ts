@@ -37,16 +37,20 @@ export class Consulta {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 120 })
+  // nullable: true is required because production rows predate the NOT NULL
+  // tightening — flipping it would crash TypeORM `synchronize` on startup. We
+  // still validate non-empty at the DTO layer (CreateConsultaDto.nombre_cliente
+  // is @IsNotEmpty), so the application never accepts new null values.
+  @Column({ nullable: true, length: 120 })
   nombre_cliente: string;
 
-  @Column({ length: 254 })
+  @Column({ nullable: true, length: 254 })
   email: string;
 
   @Column({ nullable: true, length: 32 })
   telefono: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   mensaje: string;
 
   @Column({ nullable: true, length: 80 })

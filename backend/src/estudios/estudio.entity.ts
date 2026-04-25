@@ -22,9 +22,15 @@ export class Estudio {
   /**
    * Public URL slug. Unique, indexed — DB-level enforcement prevents
    * race-condition collisions during slug generation retries.
+   *
+   * `nullable: true` is required because legacy rows in production predate
+   * the slug-generation hardening and may carry NULL slugs; flipping to NOT
+   * NULL would crash TypeORM `synchronize`. PostgreSQL treats NULL values as
+   * distinct in a unique index, so the unique constraint still prevents
+   * duplicate non-null slugs.
    */
   @Index('idx_estudio_slug', { unique: true })
-  @Column({ length: 80, unique: true })
+  @Column({ length: 80, unique: true, nullable: true })
   slug: string;
 
   @OneToOne(() => Usuario)
