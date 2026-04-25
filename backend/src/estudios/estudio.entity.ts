@@ -16,7 +16,10 @@ export class Estudio {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 120 })
+  // nullable: true — legacy production rows may carry NULL; tightening would
+  // crash TypeORM `synchronize`. Application code (UsersService, EstudiosService)
+  // always populates this field, so new rows are guaranteed non-null.
+  @Column({ nullable: true, length: 120 })
   nombre_estudio: string;
 
   /**

@@ -21,7 +21,9 @@ export class Actividad {
   consulta: Consulta;
 
   // consulta_creada | estado_cambiado | documento_subido | evento_creado | nota_creada | honorario_creado | cobro_registrado
-  @Column()
+  // nullable: true defends against legacy rows; ActividadService.registrar
+  // always sets this from a closed-set string literal, so new rows remain non-null.
+  @Column({ nullable: true })
   tipo: string;
 
   @Column({ nullable: true, type: 'text' })

@@ -14,10 +14,16 @@ export class Usuario {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 120 })
+  // nullable: true on every user-data column — legacy production rows may
+  // carry NULL and tightening would crash TypeORM `synchronize`. Application
+  // code (auth.service.ts, users.service.ts) always populates these on
+  // register and update, so new rows remain non-null in practice. The unique
+  // constraint on email still works because PostgreSQL treats NULL as
+  // distinct in a unique index.
+  @Column({ nullable: true, length: 120 })
   nombre: string;
 
-  @Column({ unique: true, length: 254 })
+  @Column({ unique: true, nullable: true, length: 254 })
   email: string;
 
   /**
@@ -26,7 +32,7 @@ export class Usuario {
    * method accidentally returns the whole entity. Defence in depth.
    */
   @Exclude({ toPlainOnly: true })
-  @Column()
+  @Column({ nullable: true })
   password: string;
 
   @Column({ default: true })

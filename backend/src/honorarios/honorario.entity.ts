@@ -14,13 +14,16 @@ export class Honorario {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'float' })
+  // nullable: true defends against legacy rows; HonorariosService always sets
+  // monto_total and fecha_vencimiento via DTO validation, so new rows are
+  // guaranteed non-null. monto_pagado has a default so it cannot be null.
+  @Column({ type: 'float', nullable: true })
   monto_total: number;
 
   @Column({ type: 'float', default: 0 })
   monto_pagado: number;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'date', nullable: true })
   fecha_vencimiento: string;
 
   @ManyToOne(() => Consulta, { eager: true })

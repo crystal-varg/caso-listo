@@ -16,18 +16,20 @@ export class Notificacion {
   @Column({ nullable: true })
   consulta_id: number | null;
 
+  // nullable: true defends against legacy rows; NotificacionesService.crear
+  // always populates these fields, so new rows remain non-null.
   // consulta_nueva | evento_proximo | caso_sin_movimiento | honorario_vencido
-  @Column()
+  @Column({ nullable: true })
   tipo: string;
 
   // in_app | email | whatsapp
-  @Column()
+  @Column({ nullable: true })
   canal: string;
 
-  @Column()
+  @Column({ nullable: true })
   titulo: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   mensaje: string;
 
   // ID of related evento or honorario — used for dedup

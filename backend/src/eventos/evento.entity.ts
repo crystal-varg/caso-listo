@@ -20,14 +20,16 @@ export class Evento {
   @JoinColumn({ name: 'consulta_id' })
   consulta: Consulta;
 
-  @Column()
+  // nullable: true defends against legacy rows; EventosService always sets
+  // titulo and fecha via DTO validation, so new rows remain non-null.
+  @Column({ nullable: true })
   titulo: string;
 
   // audiencia | vencimiento | recordatorio
   @Column({ nullable: true })
   tipo: string;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', nullable: true })
   fecha: Date;
 
   @Column({ default: false })
