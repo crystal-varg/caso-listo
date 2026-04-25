@@ -3,6 +3,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import { Request, Response } from 'express';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { validateEnv } from './config/env.validation';
 import { AppModule } from './app.module';
@@ -30,6 +31,22 @@ async function bootstrap() {
 
   // ── Cookies ────────────────────────────────────────────────────────────────
   app.use(cookieParser());
+
+  // ── Explicit OPTIONS preflight handler ────────────────────────────────────
+  // Must be registered before helmet so preflight requests get CORS headers.
+  // The actual access-control gate for data-bearing methods (GET/POST/PATCH/
+  // DELETE) is enableCors() below — it enforces the ALLOWED_ORIGINS allowlist.
+  app.use((req: Request, res: Response, next: () => void) => {
+    if (req.method === 'OPTIONS') {
+      res.header('Access-Control-Allow-Origin', req.headers.origin ?? '*');
+      res.header('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+      res.header('Access-Control-Allow-Headers', 'Content-Type,Accept,Origin,X-Requested-With');
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Max-Age', '600');
+      return res.sendStatus(204);
+    }
+    next();
+  });
 
   // ── CORS (must register BEFORE helmet) ────────────────────────────────────
   // Helmet otherwise responds to OPTIONS preflights without
