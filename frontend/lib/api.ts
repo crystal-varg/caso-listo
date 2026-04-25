@@ -20,16 +20,21 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (res.status === 401) {
     // Access token expired or missing — try a single silent refresh.
-    if (path !== '/auth/refresh' && !options.headers?.['x-refreshed']) {
+    // HeadersInit is a union (Headers | string[][] | Record<string, string>),
+    // so it doesn't support arbitrary string indexing. We always coerce to a
+    // plain Record before reading or writing custom headers.
+    const optHeaders = (options.headers as Record<string, string> | undefined) ?? {};
+    if (path !== '/auth/refresh' && !optHeaders['x-refreshed']) {
       const refreshed = await fetch(`${API_URL}/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
       });
       if (refreshed.ok) {
-        return request<T>(path, {
-          ...options,
-          headers: { ...headers, 'x-refreshed': '1' },
-        });
+        const retryHeaders: Record<string, string> = {
+          ...headers,
+          'x-refreshed': '1',
+        };
+        return request<T>(path, { ...options, headers: retryHeaders });
       }
     }
   }
