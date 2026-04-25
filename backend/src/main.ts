@@ -45,7 +45,12 @@ async function bootstrap() {
         },
       },
       crossOriginEmbedderPolicy: false, // file-serving endpoint compatibility
-      crossOriginResourcePolicy: { policy: 'same-site' },
+      // Frontend (casolisto.online via Vercel) and backend (Railway) live on
+      // different registrable domains, so 'same-site' would block CORS
+      // preflights before our CORS middleware ever runs. The CORS allowlist in
+      // enableCors() is the actual access-control gate; CORP only governs how
+      // browsers may embed our responses cross-origin.
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
       crossOriginOpenerPolicy: { policy: 'same-origin' },
       referrerPolicy: { policy: 'no-referrer' },
       hsts: {
