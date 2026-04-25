@@ -31,6 +31,23 @@ async function bootstrap() {
   // ── Cookies ────────────────────────────────────────────────────────────────
   app.use(cookieParser());
 
+  // ── CORS (must register BEFORE helmet) ────────────────────────────────────
+  // Helmet otherwise responds to OPTIONS preflights without
+  // Access-Control-Allow-Origin, blocking the browser before CORS can answer.
+  app.enableCors({
+    origin: (origin, callback) => {
+      // Allow same-origin / Postman / server-to-server (no Origin header).
+      if (!origin) return callback(null, true);
+      if (env.ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      // Do not echo the origin back — simply reject.
+      callback(new Error(`Origen no permitido: ${origin}`));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Accept', 'Origin', 'X-Requested-With'],
+    maxAge: 600,
+  });
+
   // ── Security headers ───────────────────────────────────────────────────────
   app.use(
     helmet({
@@ -63,21 +80,6 @@ async function bootstrap() {
       xssFilter: true,
     }),
   );
-
-  // ── CORS ───────────────────────────────────────────────────────────────────
-  app.enableCors({
-    origin: (origin, callback) => {
-      // Allow same-origin / Postman / server-to-server (no Origin header).
-      if (!origin) return callback(null, true);
-      if (env.ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
-      // Do not echo the origin back — simply reject.
-      callback(new Error(`Origen no permitido: ${origin}`));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Accept', 'Origin', 'X-Requested-With'],
-    maxAge: 600,
-  });
 
   // ── Global validation ──────────────────────────────────────────────────────
   app.useGlobalPipes(
