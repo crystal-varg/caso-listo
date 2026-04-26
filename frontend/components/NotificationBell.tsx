@@ -135,9 +135,8 @@ export function NotificationBell() {
         <div
           style={{
             position: 'absolute',
-            bottom: '110%',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            top: 'calc(100% + 8px)',
+            right: 0,
             background: '#fff',
             borderRadius: 12,
             boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
