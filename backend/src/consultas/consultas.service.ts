@@ -7,6 +7,7 @@ import { MailService } from '../mail/mail.service';
 import { EstudiosService } from '../estudios/estudios.service';
 import { ActividadService } from '../actividad/actividad.service';
 import { NotificacionesService } from '../notificaciones/notificaciones.service';
+import { ConsultaScoreService } from './consulta-score.service';
 import { sanitizeText, sanitizeFields } from '../common/utils/sanitize';
 import { assertOwnership } from '../common/utils/ownership';
 
@@ -26,6 +27,7 @@ export class ConsultasService {
     private estudiosService: EstudiosService,
     private actividadService: ActividadService,
     private notificacionesService: NotificacionesService,
+    private scoreService: ConsultaScoreService,
   ) {}
 
   /**
@@ -80,6 +82,16 @@ export class ConsultasService {
       dni_archivo: archivos?.dniArchivo ?? null,
       docs_archivo: archivos?.docsArchivo ?? null,
     });
+
+    // Score on insert — sanitized mensaje is the source of truth (matches what
+    // the lawyer will read), and the file fields are already in their final form.
+    const { score, category } = this.scoreService.calculateScore({
+      mensaje: consulta.mensaje,
+      dni_archivo: consulta.dni_archivo,
+      docs_archivo: consulta.docs_archivo,
+    });
+    consulta.score = score;
+    consulta.score_category = category;
 
     const saved = await this.consultaRepository.save(consulta);
 
@@ -245,6 +257,22 @@ export class ConsultasService {
       ORDER BY ultima_actividad ASC`,
       [usuarioId],
     );
+  }
+
+  /**
+   * Recompute the lead score for an existing consulta and persist it.
+   * Owner-scoped — uses the same QueryBuilder gate as findOne.
+   */
+  async recalculateScore(id: number, usuarioId: number): Promise<Consulta> {
+    const consulta = await this.findOne(id, usuarioId);
+    const { score, category } = this.scoreService.calculateScore({
+      mensaje: consulta.mensaje,
+      dni_archivo: consulta.dni_archivo,
+      docs_archivo: consulta.docs_archivo,
+    });
+    consulta.score = score;
+    consulta.score_category = category;
+    return this.consultaRepository.save(consulta);
   }
 
   /** Returns true if the given filename belongs to a consulta owned by the user. */

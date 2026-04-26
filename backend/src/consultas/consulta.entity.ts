@@ -32,6 +32,17 @@ export enum UrgenciaConsulta {
   ALTA = 'alta',
 }
 
+/**
+ * Auto-computed lead-quality score derived from intake content
+ * (see ConsultaScoreService). Persisted on every create + recalculate call so
+ * the list view can sort/filter without recomputing on each request.
+ */
+export enum ScoreCategoria {
+  ALTO = 'ALTO',
+  MEDIO = 'MEDIO',
+  BAJO = 'BAJO',
+}
+
 @Entity('consultas')
 export class Consulta {
   @PrimaryGeneratedColumn()
@@ -84,6 +95,21 @@ export class Consulta {
 
   @Column({ nullable: true, length: 120 })
   docs_archivo: string;
+
+  // Auto-scoring columns. Defaults guarantee legacy rows remain consistent
+  // through `synchronize` — they get score=0 / score_category=BAJO until the
+  // recalculate endpoint is invoked. nullable: true is defensive against the
+  // same legacy-data pitfalls we hit on other text columns.
+  @Column({ type: 'int', default: 0, nullable: true })
+  score: number;
+
+  @Column({
+    type: 'enum',
+    enum: ScoreCategoria,
+    default: ScoreCategoria.BAJO,
+    nullable: true,
+  })
+  score_category: ScoreCategoria;
 
   @ManyToOne(() => Estudio, (estudio) => estudio.consultas)
   @JoinColumn({ name: 'estudio_id' })

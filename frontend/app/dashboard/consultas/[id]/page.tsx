@@ -9,7 +9,15 @@ interface Consulta {
   mensaje: string; estado: string; fuero: string; urgencia: string; tipo_caso: string; created_at: string;
   fecha_preferida?: string; horario_preferido?: string;
   dni_archivo?: string; docs_archivo?: string;
+  score?: number;
+  score_category?: 'ALTO' | 'MEDIO' | 'BAJO';
 }
+
+const SCORE_BADGE: Record<string, { label: string; emoji: string; bg: string; color: string }> = {
+  ALTO:  { label: 'Alto',  emoji: '🟢', bg: '#dcfce7', color: '#15803d' },
+  MEDIO: { label: 'Medio', emoji: '🟡', bg: '#fef3c7', color: '#b45309' },
+  BAJO:  { label: 'Bajo',  emoji: '🔴', bg: '#fee2e2', color: '#dc2626' },
+};
 
 function docEstado(val?: string): 'pendiente' | 'faltante' | 'subido' {
   if (!val) return 'pendiente';
@@ -98,6 +106,7 @@ export default function ConsultaDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
+  const [recalculating, setRecalculating] = useState(false);
 
   useEffect(() => {
     api.get<Consulta>(`/consultas/${params.id}`)
@@ -115,6 +124,19 @@ export default function ConsultaDetailPage() {
       setTimeout(() => setSavedMsg(''), 2000);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const recalcularScore = async () => {
+    if (!consulta) return;
+    setRecalculating(true);
+    try {
+      const updated = await api.patch<Consulta>(`/consultas/${params.id}/recalculate-score`, {});
+      setConsulta(updated);
+      setSavedMsg('Score recalculado ✓');
+      setTimeout(() => setSavedMsg(''), 2000);
+    } finally {
+      setRecalculating(false);
     }
   };
 
@@ -145,6 +167,18 @@ export default function ConsultaDetailPage() {
             {consulta.urgencia && (
               <span className={`badge badge-${consulta.urgencia}`}>
                 {urgLabel[consulta.urgencia]?.emoji} Urgencia {urgLabel[consulta.urgencia]?.label}
+              </span>
+            )}
+            {consulta.score_category && SCORE_BADGE[consulta.score_category] && (
+              <span
+                style={{
+                  fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 20,
+                  background: SCORE_BADGE[consulta.score_category].bg,
+                  color: SCORE_BADGE[consulta.score_category].color,
+                }}
+              >
+                {SCORE_BADGE[consulta.score_category].emoji} Score {typeof consulta.score === 'number' ? `${consulta.score} ` : ''}
+                ({SCORE_BADGE[consulta.score_category].label.toUpperCase()})
               </span>
             )}
           </div>
@@ -243,6 +277,47 @@ export default function ConsultaDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Score automático del caso */}
+        <div className="card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#9ca3af', marginBottom: 6 }}>
+                Score del caso
+              </div>
+              {consulta.score_category && SCORE_BADGE[consulta.score_category] ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 24, fontWeight: 800, color: SCORE_BADGE[consulta.score_category].color }}>
+                    {typeof consulta.score === 'number' ? consulta.score : '—'}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 13, fontWeight: 700, padding: '4px 12px', borderRadius: 20,
+                      background: SCORE_BADGE[consulta.score_category].bg,
+                      color: SCORE_BADGE[consulta.score_category].color,
+                    }}
+                  >
+                    {SCORE_BADGE[consulta.score_category].emoji} {SCORE_BADGE[consulta.score_category].label.toUpperCase()}
+                  </span>
+                </div>
+              ) : (
+                <div style={{ fontSize: 14, color: '#9ca3af' }}>Aún no calculado</div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={recalcularScore}
+              disabled={recalculating}
+              className="btn-ghost"
+              style={{ fontSize: 13, padding: '6px 14px' }}
+            >
+              {recalculating ? 'Recalculando...' : '↻ Recalcular'}
+            </button>
+          </div>
+          <p style={{ fontSize: 12, color: '#9ca3af', margin: 0 }}>
+            Calculado automáticamente a partir del mensaje y los documentos. Recalculá si editaste el caso fuera de la app.
+          </p>
+        </div>
 
         {/* Clasificación — el abogado controla */}
         <div className="card">

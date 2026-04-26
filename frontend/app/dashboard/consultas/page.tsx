@@ -6,7 +6,15 @@ import { api } from '@/lib/api';
 interface Consulta {
   id: number; nombre_cliente: string; email: string; telefono: string;
   mensaje: string; estado: string; fuero: string; urgencia: string; created_at: string;
+  score?: number;
+  score_category?: 'ALTO' | 'MEDIO' | 'BAJO';
 }
+
+const SCORE_BADGE: Record<string, { label: string; emoji: string; bg: string; color: string }> = {
+  ALTO:  { label: 'Alto',  emoji: '🟢', bg: '#dcfce7', color: '#15803d' },
+  MEDIO: { label: 'Medio', emoji: '🟡', bg: '#fef3c7', color: '#b45309' },
+  BAJO:  { label: 'Bajo',  emoji: '🔴', bg: '#fee2e2', color: '#dc2626' },
+};
 
 const ESTADOS = ['todos', 'nuevo', 'en_proceso', 'cerrado'];
 const FUEROS = ['todos', 'Laboral', 'Penal', 'Familia', 'Civil / Comercial', 'Administrativo', 'Tributario', 'Previsional', 'Sin definir'];
@@ -113,6 +121,19 @@ export default function ConsultasPage() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 600, fontSize: 14 }}>{c.nombre_cliente}</span>
+                    {c.score_category && SCORE_BADGE[c.score_category] && (
+                      <span
+                        title={typeof c.score === 'number' ? `Score: ${c.score}` : undefined}
+                        style={{
+                          fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 12,
+                          background: SCORE_BADGE[c.score_category].bg,
+                          color: SCORE_BADGE[c.score_category].color,
+                          letterSpacing: '0.3px',
+                        }}
+                      >
+                        {SCORE_BADGE[c.score_category].emoji} {SCORE_BADGE[c.score_category].label.toUpperCase()}
+                      </span>
+                    )}
                     {c.urgencia && <span style={{ fontSize: 13 }}>{urgEmoji[c.urgencia]}</span>}
                     <span className={`badge ${estadoBadge[c.estado]?.cls}`}>{estadoBadge[c.estado]?.label}</span>
                     {c.fuero && c.fuero !== 'Sin definir' && (

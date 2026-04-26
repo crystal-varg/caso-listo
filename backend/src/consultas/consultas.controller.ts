@@ -265,6 +265,15 @@ export class ConsultasController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch(':id/recalculate-score')
+  recalculateScore(
+    @Request() req,
+    @Param('id', new ParseIntPipe({ errorHttpStatusCode: 400 })) id: number,
+  ) {
+    return this.consultasService.recalculateScore(id, req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(
     @Request() req,
