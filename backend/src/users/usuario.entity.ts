@@ -38,6 +38,11 @@ export class Usuario {
   @Column({ default: true })
   activo: boolean;
 
+  // 'estudio' is the default for self-registered tenants. 'admin' is granted
+  // exclusively through the admin module and never via the public register flow.
+  @Column({ default: 'estudio' })
+  role: 'admin' | 'estudio';
+
   @OneToOne(() => Estudio, (estudio) => estudio.usuario)
   estudio: Estudio;
 

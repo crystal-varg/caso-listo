@@ -1,8 +1,18 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
 import { Estudio, EstudioConfig } from './estudio.entity';
-import { generateSlug, SLUG_BLOCKLIST } from '../common/utils/slug';
+import {
+  generateSlug,
+  isValidSlugFormat,
+  SLUG_BLOCKLIST,
+} from '../common/utils/slug';
 import { sanitizeText } from '../common/utils/sanitize';
 
 const MAX_SLUG_ATTEMPTS = 5;
@@ -86,6 +96,74 @@ export class EstudiosService {
     estudio.nombre_estudio = sanitizeText(nombreEstudio);
     if (config !== undefined) estudio.config = config;
     return this.estudioRepository.save(estudio);
+  }
+
+  /**
+   * List all estudios with their owner (id/nombre/email). Used by the admin
+   * console — never expose this on a public endpoint, the joined `usuario`
+   * relation carries identity data.
+   */
+  async findAllForAdmin(): Promise<Estudio[]> {
+    return this.estudioRepository.find({
+      relations: ['usuario'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  /**
+   * Create an estudio with an admin-supplied slug (no auto-generation). Validates
+   * format + blocklist before insert, and translates a unique-violation into a
+   * clean 409 — admins should see "slug en uso", not a SQL stack trace.
+   */
+  async createWithSlug(
+    usuarioId: number,
+    nombreEstudio: string,
+    slug: string,
+    config?: EstudioConfig,
+  ): Promise<Estudio> {
+    if (!isValidSlugFormat(slug)) {
+      throw new ConflictException('Slug con formato inválido o reservado.');
+    }
+    if (SLUG_BLOCKLIST.has(slug)) {
+      throw new ConflictException('Slug reservado.');
+    }
+
+    try {
+      const estudio = this.estudioRepository.create({
+        nombre_estudio: sanitizeText(nombreEstudio),
+        usuario_id: usuarioId,
+        slug,
+        config: config ?? null,
+      });
+      return await this.estudioRepository.save(estudio);
+    } catch (err) {
+      if (err instanceof QueryFailedError && this.isUniqueViolation(err)) {
+        throw new ConflictException('Ya existe un estudio con ese slug.');
+      }
+      throw err;
+    }
+  }
+
+  async updateConfigBySlug(
+    slug: string,
+    partialConfig: Partial<EstudioConfig>,
+  ): Promise<Estudio> {
+    const estudio = await this.estudioRepository.findOne({ where: { slug } });
+    if (!estudio) throw new NotFoundException('Estudio no encontrado.');
+    estudio.config = { ...(estudio.config ?? {}), ...partialConfig } as EstudioConfig;
+    return this.estudioRepository.save(estudio);
+  }
+
+  /**
+   * Delete an estudio by slug and return its `usuario_id` so the caller can
+   * remove the owning user. Throws 404 if the slug doesn't match.
+   */
+  async deleteBySlug(slug: string): Promise<{ usuarioId: number }> {
+    const estudio = await this.estudioRepository.findOne({ where: { slug } });
+    if (!estudio) throw new NotFoundException('Estudio no encontrado.');
+    const usuarioId = estudio.usuario_id;
+    await this.estudioRepository.remove(estudio);
+    return { usuarioId };
   }
 
   private isUniqueViolation(err: QueryFailedError): boolean {

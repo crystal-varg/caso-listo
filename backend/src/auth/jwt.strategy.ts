@@ -29,7 +29,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(payload: { sub: number; email: string }) {
-    return { id: payload.sub, email: payload.email };
+  async validate(payload: { sub: number; email: string; role?: 'admin' | 'estudio' }) {
+    // Tokens issued before the role rollout will not carry `role`. Default to
+    // 'estudio' so AdminGuard never grants admin access on a legacy token.
+    return {
+      id: payload.sub,
+      email: payload.email,
+      role: payload.role === 'admin' ? 'admin' : 'estudio',
+    };
   }
 }

@@ -10,7 +10,11 @@
       "PowerShell(git commit -m $msg)",
       "PowerShell(git push origin main)",
       "Bash(npm run *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(node -e \"console.log\\(require.resolve\\('multer'\\)\\)\")",
+      "PowerShell(npx tsc --noEmit -p tsconfig.json 2>&1)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(npm test *)"
     ]
   }
 }

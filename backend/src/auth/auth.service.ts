@@ -13,7 +13,7 @@ import {
 export interface AuthResult {
   accessToken: string;
   refreshToken: string;
-  usuario: { id: number; nombre: string; email: string };
+  usuario: { id: number; nombre: string; email: string; role: 'admin' | 'estudio' };
   estudio: any;
 }
 
@@ -30,11 +30,16 @@ export class AuthService {
     private mailService: MailService,
   ) {}
 
-  private signAccess(usuarioId: number, email: string): string {
+  private signAccess(usuarioId: number, email: string, role: 'admin' | 'estudio'): string {
     return this.jwtService.sign(
-      { sub: usuarioId, email },
+      { sub: usuarioId, email, role },
       { expiresIn: ACCESS_TOKEN_JWT_EXPIRES, secret: process.env.JWT_SECRET as string },
     );
+  }
+
+  /** Backfill a missing role on legacy rows so the JWT payload is always typed. */
+  private resolveRole(role: unknown): 'admin' | 'estudio' {
+    return role === 'admin' ? 'admin' : 'estudio';
   }
 
   async login(email: string, password: string): Promise<AuthResult> {
@@ -44,14 +49,15 @@ export class AuthService {
     const valido = await this.usersService.validatePassword(usuario, password);
     if (!valido) throw new UnauthorizedException('Credenciales inválidas');
 
-    const accessToken = this.signAccess(usuario.id, usuario.email);
+    const role = this.resolveRole(usuario.role);
+    const accessToken = this.signAccess(usuario.id, usuario.email, role);
     const refresh = await this.refreshTokenService.issue(usuario.id, REFRESH_TOKEN_TTL_MS);
     const estudio = await this.estudiosService.findByUsuario(usuario.id);
 
     return {
       accessToken,
       refreshToken: refresh.raw,
-      usuario: { id: usuario.id, nombre: usuario.nombre, email: usuario.email },
+      usuario: { id: usuario.id, nombre: usuario.nombre, email: usuario.email, role },
       estudio,
     };
   }
@@ -60,13 +66,14 @@ export class AuthService {
     const usuario = await this.usersService.create(dto);
     const estudio = await this.estudiosService.create(usuario.id, dto.nombre_estudio);
 
-    const accessToken = this.signAccess(usuario.id, usuario.email);
+    const role = this.resolveRole(usuario.role);
+    const accessToken = this.signAccess(usuario.id, usuario.email, role);
     const refresh = await this.refreshTokenService.issue(usuario.id, REFRESH_TOKEN_TTL_MS);
 
     return {
       accessToken,
       refreshToken: refresh.raw,
-      usuario: { id: usuario.id, nombre: usuario.nombre, email: usuario.email },
+      usuario: { id: usuario.id, nombre: usuario.nombre, email: usuario.email, role },
       estudio,
     };
   }
@@ -79,7 +86,8 @@ export class AuthService {
     const usuario = await this.usersService.findById(usuarioId);
     if (!usuario) throw new UnauthorizedException('Token inválido.');
 
-    const accessToken = this.signAccess(usuario.id, usuario.email);
+    const role = this.resolveRole(usuario.role);
+    const accessToken = this.signAccess(usuario.id, usuario.email, role);
     return { accessToken, refreshToken: issued.raw };
   }
 
@@ -98,7 +106,12 @@ export class AuthService {
     const estudio = await this.estudiosService.findByUsuario(usuarioId);
     return {
       usuario: usuario
-        ? { id: usuario.id, nombre: usuario.nombre, email: usuario.email }
+        ? {
+            id: usuario.id,
+            nombre: usuario.nombre,
+            email: usuario.email,
+            role: this.resolveRole(usuario.role),
+          }
         : null,
       estudio,
     };

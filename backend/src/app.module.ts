@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ConsultasModule } from './consultas/consultas.module';
 import { EstudiosModule } from './estudios/estudios.module';
+import { AdminModule } from './admin/admin.module';
 import { MailModule } from './mail/mail.module';
 import { HonorariosModule } from './honorarios/honorarios.module';
 import { ActividadModule } from './actividad/actividad.module';
@@ -70,6 +71,7 @@ function getDbConfig() {
     UsersModule,
     ConsultasModule,
     EstudiosModule,
+    AdminModule,
     MailModule,
     HonorariosModule,
     ActividadModule,
