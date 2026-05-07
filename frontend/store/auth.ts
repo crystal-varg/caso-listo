@@ -5,6 +5,7 @@ interface Usuario {
   id: number;
   nombre: string;
   email: string;
+  role: 'admin' | 'estudio';
 }
 
 interface Estudio {
