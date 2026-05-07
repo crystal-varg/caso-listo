@@ -11,6 +11,27 @@ import {
 import { Usuario } from '../users/usuario.entity';
 import { Consulta } from '../consultas/consulta.entity';
 
+export interface EstudioConfig {
+  nombre_completo: string;
+  descripcion: string;
+  color_primary: string;
+  color_secondary: string;
+  logo_url?: string;
+  whatsapp?: string;
+  email_contacto?: string;
+  direccion?: string;
+  areas: string[];
+  servicios: Array<{
+    titulo: string;
+    descripcion: string;
+  }>;
+  seo: {
+    titulo: string;
+    descripcion: string;
+    keywords: string[];
+  };
+}
+
 @Entity('estudios')
 export class Estudio {
   @PrimaryGeneratedColumn()
@@ -35,6 +56,9 @@ export class Estudio {
   @Index('idx_estudio_slug', { unique: true })
   @Column({ length: 80, unique: true, nullable: true })
   slug: string;
+
+  @Column({ type: 'json', nullable: true })
+  config: EstudioConfig | null;
 
   @OneToOne(() => Usuario)
   @JoinColumn({ name: 'usuario_id' })

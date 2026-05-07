@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { QueryFailedError, Repository } from 'typeorm';
-import { Estudio } from './estudio.entity';
+import { Estudio, EstudioConfig } from './estudio.entity';
 import { generateSlug, SLUG_BLOCKLIST } from '../common/utils/slug';
 import { sanitizeText } from '../common/utils/sanitize';
 
@@ -20,6 +20,20 @@ export class EstudiosService {
     return this.estudioRepository.findOne({
       where: { slug },
       relations: ['usuario'],
+    });
+  }
+
+  /**
+   * Public landing-page lookup. Selects only the fields safe to expose without
+   * authentication — does NOT load the `usuario` relation, which carries the
+   * password hash and other sensitive identity data.
+   */
+  async findPublicBySlug(
+    slug: string,
+  ): Promise<Pick<Estudio, 'nombre_estudio' | 'slug' | 'config'> | null> {
+    return this.estudioRepository.findOne({
+      where: { slug },
+      select: ['nombre_estudio', 'slug', 'config'],
     });
   }
 
@@ -62,10 +76,15 @@ export class EstudiosService {
     );
   }
 
-  async updateByUsuario(usuarioId: number, nombreEstudio: string): Promise<Estudio> {
+  async updateByUsuario(
+    usuarioId: number,
+    nombreEstudio: string,
+    config?: EstudioConfig,
+  ): Promise<Estudio> {
     const estudio = await this.findByUsuario(usuarioId);
     if (!estudio) throw new InternalServerErrorException('Estudio no encontrado');
     estudio.nombre_estudio = sanitizeText(nombreEstudio);
+    if (config !== undefined) estudio.config = config;
     return this.estudioRepository.save(estudio);
   }
 
