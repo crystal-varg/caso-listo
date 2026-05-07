@@ -30,6 +30,31 @@ export interface EstudioConfig {
     descripcion: string;
     keywords: string[];
   };
+
+  // Sistema de templates
+  template_id?: string;
+
+  // Sección "Quiénes Somos" del landing
+  sobre_nosotros?: {
+    año_fundacion?: string;
+    stat_numero?: string;
+    stat_label?: string;
+    texto_principal?: string;
+    descripcion_1?: string;
+    descripcion_2?: string;
+    credenciales?: Array<{
+      label: string;
+      value: string;
+    }>;
+  };
+
+  // Redes sociales
+  redes?: {
+    facebook?: string;
+    instagram?: string;
+    linkedin?: string;
+    twitter?: string;
+  };
 }
 
 @Entity('estudios')

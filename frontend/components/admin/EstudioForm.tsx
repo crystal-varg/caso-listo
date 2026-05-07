@@ -2,10 +2,16 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { TEMPLATE_REGISTRY, DEFAULT_TEMPLATE_ID } from '@/templates/registry';
 
 interface Servicio {
   titulo: string;
   descripcion: string;
+}
+
+interface Credencial {
+  label: string;
+  value: string;
 }
 
 interface EstudioConfigData {
@@ -20,6 +26,21 @@ interface EstudioConfigData {
   areas?: string[];
   servicios?: Servicio[];
   seo?: { titulo?: string; descripcion?: string; keywords?: string[] };
+  template_id?: string;
+  sobre_nosotros?: {
+    año_fundacion?: string;
+    stat_numero?: string;
+    stat_label?: string;
+    texto_principal?: string;
+    descripcion_1?: string;
+    descripcion_2?: string;
+    credenciales?: Credencial[];
+  };
+  redes?: {
+    facebook?: string;
+    instagram?: string;
+    linkedin?: string;
+  };
 }
 
 interface Props {
@@ -73,6 +94,25 @@ export default function EstudioForm({ initialData, slug, modo }: Props) {
   );
   const [nuevaKeyword, setNuevaKeyword] = useState('');
 
+  // Template
+  const [templateId, setTemplateId] = useState<string>(cfg.template_id ?? DEFAULT_TEMPLATE_ID);
+
+  // Sobre nosotros
+  const [snAñoFundacion, setSnAñoFundacion] = useState(cfg.sobre_nosotros?.año_fundacion ?? '');
+  const [snStatNumero, setSnStatNumero] = useState(cfg.sobre_nosotros?.stat_numero ?? '');
+  const [snStatLabel, setSnStatLabel] = useState(cfg.sobre_nosotros?.stat_label ?? '');
+  const [snTextoPrincipal, setSnTextoPrincipal] = useState(cfg.sobre_nosotros?.texto_principal ?? '');
+  const [snDescripcion1, setSnDescripcion1] = useState(cfg.sobre_nosotros?.descripcion_1 ?? '');
+  const [snDescripcion2, setSnDescripcion2] = useState(cfg.sobre_nosotros?.descripcion_2 ?? '');
+  const [credenciales, setCredenciales] = useState<Credencial[]>(
+    Array.isArray(cfg.sobre_nosotros?.credenciales) ? (cfg.sobre_nosotros!.credenciales as Credencial[]) : [],
+  );
+
+  // Redes sociales
+  const [redFacebook, setRedFacebook] = useState(cfg.redes?.facebook ?? '');
+  const [redInstagram, setRedInstagram] = useState(cfg.redes?.instagram ?? '');
+  const [redLinkedin, setRedLinkedin] = useState(cfg.redes?.linkedin ?? '');
+
   // UI state
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
@@ -107,6 +147,15 @@ export default function EstudioForm({ initialData, slug, modo }: Props) {
   const removeServicio = (i: number) =>
     setServicios(servicios.filter((_, idx) => idx !== i));
 
+  const addCredencial = () =>
+    setCredenciales([...credenciales, { label: '', value: '' }]);
+
+  const updateCredencial = (i: number, patch: Partial<Credencial>) =>
+    setCredenciales(credenciales.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
+
+  const removeCredencial = (i: number) =>
+    setCredenciales(credenciales.filter((_, idx) => idx !== i));
+
   const buildConfig = () => ({
     nombre_completo: nombreCompleto.trim(),
     descripcion: descripcion.trim(),
@@ -124,6 +173,23 @@ export default function EstudioForm({ initialData, slug, modo }: Props) {
       titulo: seoTitulo.trim(),
       descripcion: seoDescripcion.trim(),
       keywords,
+    },
+    template_id: templateId || DEFAULT_TEMPLATE_ID,
+    sobre_nosotros: {
+      año_fundacion: snAñoFundacion.trim() || undefined,
+      stat_numero: snStatNumero.trim() || undefined,
+      stat_label: snStatLabel.trim() || undefined,
+      texto_principal: snTextoPrincipal.trim() || undefined,
+      descripcion_1: snDescripcion1.trim() || undefined,
+      descripcion_2: snDescripcion2.trim() || undefined,
+      credenciales: credenciales
+        .map((c) => ({ label: c.label.trim(), value: c.value.trim() }))
+        .filter((c) => c.label.length > 0 && c.value.length > 0),
+    },
+    redes: {
+      facebook: redFacebook.trim() || undefined,
+      instagram: redInstagram.trim() || undefined,
+      linkedin: redLinkedin.trim() || undefined,
     },
   });
 
@@ -422,6 +488,186 @@ export default function EstudioForm({ initialData, slug, modo }: Props) {
         <button type="button" className="btn-ghost" onClick={addServicio} style={{ fontSize: 13 }}>
           + Agregar servicio
         </button>
+      </section>
+
+      {/* Template del sitio */}
+      <section style={{ borderTop: '1px solid #f0f0f0', paddingTop: 22 }}>
+        <h2 style={sectionTitleStyle}>Template del sitio</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+          {Object.values(TEMPLATE_REGISTRY).map((t) => {
+            const selected = templateId === t.id;
+            return (
+              <div
+                key={t.id}
+                onClick={() => setTemplateId(t.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTemplateId(t.id); } }}
+                style={{
+                  border: selected ? '2px solid #4f46e5' : '1px solid #e5e7eb',
+                  borderRadius: 10,
+                  padding: 12,
+                  cursor: 'pointer',
+                  background: '#fff',
+                  transition: 'border 0.1s',
+                }}
+              >
+                <div style={{
+                  height: 96,
+                  borderRadius: 8,
+                  background: t.preview_bg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 10,
+                }}>
+                  <span style={{
+                    color: '#d4af37',
+                    fontFamily: 'serif',
+                    fontSize: 16,
+                    fontWeight: 600,
+                    letterSpacing: '1.5px',
+                  }}>
+                    {t.preview_text}
+                  </span>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{t.nombre}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4, lineHeight: 1.45 }}>
+                  {t.descripcion}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Quiénes Somos */}
+      <section style={{ borderTop: '1px solid #f0f0f0', paddingTop: 22 }}>
+        <h2 style={sectionTitleStyle}>Quiénes Somos</h2>
+        <div style={fieldsCol}>
+          <div>
+            <label className="label">Año de fundación</label>
+            <input
+              className="input"
+              value={snAñoFundacion}
+              onChange={(e) => setSnAñoFundacion(e.target.value)}
+              placeholder="1984"
+            />
+          </div>
+          <div>
+            <label className="label">Estadística — número</label>
+            <input
+              className="input"
+              value={snStatNumero}
+              onChange={(e) => setSnStatNumero(e.target.value)}
+              placeholder="40+"
+            />
+          </div>
+          <div>
+            <label className="label">Estadística — descripción</label>
+            <input
+              className="input"
+              value={snStatLabel}
+              onChange={(e) => setSnStatLabel(e.target.value)}
+              placeholder="Años de ejercicio profesional"
+            />
+          </div>
+          <div>
+            <label className="label">Texto principal</label>
+            <textarea
+              className="input"
+              value={snTextoPrincipal}
+              onChange={(e) => setSnTextoPrincipal(e.target.value)}
+              rows={2}
+              placeholder='"Nos dedicamos a que Usted se enfoque en lo que más sabe."'
+            />
+          </div>
+          <div>
+            <label className="label">Descripción — párrafo 1</label>
+            <textarea
+              className="input"
+              value={snDescripcion1}
+              onChange={(e) => setSnDescripcion1(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <div>
+            <label className="label">Descripción — párrafo 2</label>
+            <textarea
+              className="input"
+              value={snDescripcion2}
+              onChange={(e) => setSnDescripcion2(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <div>
+            <label className="label">Credenciales</label>
+            {credenciales.map((c, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <input
+                  className="input"
+                  placeholder="Label (ej: Universidad)"
+                  value={c.label}
+                  onChange={(e) => updateCredencial(i, { label: e.target.value })}
+                  style={{ flex: 1 }}
+                />
+                <input
+                  className="input"
+                  placeholder="Valor (ej: UNNE — 1984)"
+                  value={c.value}
+                  onChange={(e) => updateCredencial(i, { value: e.target.value })}
+                  style={{ flex: 2 }}
+                />
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => removeCredencial(i)}
+                  style={{ color: '#dc2626', fontSize: 14, padding: '0 12px' }}
+                  aria-label="Eliminar credencial"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <button type="button" className="btn-ghost" onClick={addCredencial} style={{ fontSize: 13 }}>
+              + Agregar credencial
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Redes Sociales */}
+      <section style={{ borderTop: '1px solid #f0f0f0', paddingTop: 22 }}>
+        <h2 style={sectionTitleStyle}>Redes Sociales</h2>
+        <div style={fieldsCol}>
+          <div>
+            <label className="label">Facebook URL</label>
+            <input
+              className="input"
+              value={redFacebook}
+              onChange={(e) => setRedFacebook(e.target.value)}
+              placeholder="https://www.facebook.com/tu-estudio"
+            />
+          </div>
+          <div>
+            <label className="label">Instagram URL</label>
+            <input
+              className="input"
+              value={redInstagram}
+              onChange={(e) => setRedInstagram(e.target.value)}
+              placeholder="https://www.instagram.com/tu-estudio"
+            />
+          </div>
+          <div>
+            <label className="label">LinkedIn URL</label>
+            <input
+              className="input"
+              value={redLinkedin}
+              onChange={(e) => setRedLinkedin(e.target.value)}
+              placeholder="https://www.linkedin.com/company/tu-estudio"
+            />
+          </div>
+        </div>
       </section>
 
       {/* SEO */}
