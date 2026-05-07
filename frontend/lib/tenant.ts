@@ -1,5 +1,3 @@
-import { headers } from 'next/headers';
-
 // Refleja la interfaz EstudioConfig del backend
 export interface SobreNosotros {
   año_fundacion?: string;
@@ -39,13 +37,6 @@ export interface TenantData {
   config: TenantConfig;
 }
 
-// Lee el slug del tenant desde el header seteado por el middleware
-export async function getTenantSlug(): Promise<string | null> {
-  const headersList = await headers();
-  return headersList.get('x-tenant-slug');
-}
-
-// Fetch de config del tenant desde el backend.
 // Server-side: pega directo al backend (no el proxy /api de same-origin).
 export async function fetchTenantData(slug: string): Promise<TenantData | null> {
   try {

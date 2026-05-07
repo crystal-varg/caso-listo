@@ -206,12 +206,12 @@ export default function AdminEstudiosPage() {
                       </td>
                       <td style={tdStyle}>
                         <a
-                          href={`https://${est.slug}.casolisto.com`}
+                          href={`/${est.slug}`}
                           target="_blank"
                           rel="noreferrer"
                           style={{ color: '#4f46e5', textDecoration: 'none', fontSize: 12 }}
                         >
-                          {est.slug}.casolisto.com ↗
+                          casolisto.online/{est.slug} ↗
                         </a>
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'right' }}>
