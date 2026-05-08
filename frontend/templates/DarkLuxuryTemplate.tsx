@@ -151,7 +151,15 @@ const CSS_STYLES = `
       linear-gradient(90deg, rgba(201,169,110,0.04) 1px, transparent 1px);
     background-size: 60px 60px;
     animation: dlGridMove 20s linear infinite;
-    transform: perspective(600px) rotateX(30deg) translateY(20%);
+  }
+  .dl-hero-grid-inner {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(201,169,110,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,169,110,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    transform: rotateX(30deg) translateY(20%);
+    transform-origin: top center;
   }
   @keyframes dlGridMove {
     0% { background-position: 0 0; }
@@ -168,7 +176,7 @@ const CSS_STYLES = `
     50% { transform: translate(-50%,-55%) scale(1.08); }
   }
   .dl-hero-content {
-    position: relative; z-index: 2; text-align: center; padding: 0 24px;
+    position: relative; z-index: 10; text-align: center; padding: 0 24px;
   }
   .dl-hero-eyebrow {
     font-size: 10px; letter-spacing: 0.45em; text-transform: uppercase;
@@ -325,6 +333,10 @@ const CSS_STYLES = `
     padding: 12px 28px; border: 1px solid var(--border);
     background: transparent; color: var(--muted); cursor: none;
     transition: all 0.3s; font-family: 'Josefin Sans', sans-serif;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .dl-tab-btn.active, .dl-tab-btn:hover {
     background: var(--accent); color: var(--black); border-color: var(--accent);
@@ -455,14 +467,30 @@ const CSS_STYLES = `
   .dl-form-label {
     font-size: 8px; letter-spacing: 0.4em; text-transform: uppercase; color: var(--muted);
   }
-  .dl-form-input, .dl-form-textarea, .dl-form-select {
+  .dl-form-input, .dl-form-textarea {
     background: transparent; border: none; outline: none;
     color: var(--white); font-family: 'Josefin Sans', sans-serif;
     font-size: 13px; font-weight: 300; letter-spacing: 0.05em; width: 100%; padding: 4px 0;
   }
   .dl-form-input::placeholder, .dl-form-textarea::placeholder { color: var(--muted); }
   .dl-form-textarea { resize: none; height: 80px; }
-  .dl-form-select option { background: #111; color: var(--white); }
+  .dl-form-select {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--white);
+    font-family: 'Josefin Sans', sans-serif;
+    font-size: 13px; font-weight: 300;
+    letter-spacing: 0.05em;
+    width: 100%; padding: 4px 0;
+    cursor: none;
+  }
+  .dl-form-select option {
+    background: #111111;
+    color: #f5f2ee;
+  }
   .dl-form-submit {
     margin-top: 40px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   }
@@ -574,12 +602,14 @@ function formatWhatsApp(raw?: string): string {
 }
 
 function getMonogram(nombre: string): string {
-  return nombre
-    .split(' ')
-    .filter(w => w.length > 2)
-    .slice(0, 3)
-    .map(w => w[0].toUpperCase())
-    .join('');
+  const IGNORE = ['estudio','contable','jurídico','juridico','abogados',
+                  'asociados','y','&','de','del','la','el','dr','dra','cr','lic'];
+  const words = nombre.split(' ')
+    .filter(w => w.length > 1 && !IGNORE.includes(w.toLowerCase()));
+  if (words.length === 0) return nombre[0]?.toUpperCase() ?? '';
+  if (words.length === 1) return words[0][0].toUpperCase();
+  // Primera letra de la primera palabra significativa + primera del apellido (última)
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
 function getEyebrow(config: any): string {
@@ -760,8 +790,18 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
       {/* Nav */}
       <nav ref={navRef} className="dl-nav">
         <a href="#" className="dl-nav-logo" onClick={e => { e.preventDefault(); scrollTo('dl-hero'); }}>
-          {config.nombre_completo.split(' ')[0]}
-          <span>{config.nombre_completo.split(' ').slice(1).join(' ')}</span>
+          {config.nombre_completo
+            .split(' ')
+            .filter(w => !['estudio','contable','jurídico','juridico',
+                           'y','&','de','del'].includes(w.toLowerCase()))
+            .join(' ')}
+          <span>
+            {config.nombre_completo
+              .split(' ')
+              .filter(w => ['estudio','contable','jurídico','juridico',
+                            'abogados','asociados'].includes(w.toLowerCase()))
+              .join(' ') || 'Estudio Profesional'}
+          </span>
         </a>
 
         <ul className="dl-nav-links">
@@ -797,9 +837,11 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
       </div>
 
       {/* ═══ HERO ═══ */}
-      <section id="dl-hero" className="dl-hero">
+      <section id="dl-hero" className="dl-hero" style={{ perspective: '600px' }}>
         <div className="dl-hero-bg" />
-        <div className="dl-hero-grid" />
+        <div className="dl-hero-grid">
+          <div className="dl-hero-grid-inner" />
+        </div>
         <div className="dl-hero-orb" />
         <div className="dl-hero-content">
           <p className="dl-hero-eyebrow">{eyebrow}</p>
@@ -890,8 +932,9 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
                     key={i}
                     className={`dl-tab-btn${activeTab === i ? ' active' : ''}`}
                     onClick={() => setActiveTab(i)}
+                    title={s.titulo}
                   >
-                    {s.titulo}
+                    {s.titulo.length > 20 ? s.titulo.slice(0, 20) + '…' : s.titulo}
                   </button>
                 ))}
               </div>
