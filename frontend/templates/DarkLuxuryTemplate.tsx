@@ -280,21 +280,46 @@ const CSS_STYLES = `
   .dl-process-inner { max-width: 1200px; margin: 0 auto; padding: 0 80px; }
   .dl-process-header { text-align: center; margin-bottom: 80px; }
   .dl-process-tabs {
-    display: flex; justify-content: center; gap: 4px;
-    margin-bottom: 72px; flex-wrap: wrap;
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 72px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }
   .dl-tab-btn {
-    font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
-    padding: 12px 28px; border: 1px solid var(--border);
-    background: transparent; color: var(--muted); cursor: none;
-    transition: all 0.3s; font-family: 'Josefin Sans', sans-serif;
-    max-width: 160px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    padding: 8px 20px;
+    border: none;
+    background: transparent;
+    color: rgba(245,242,238,0.35);
+    cursor: none;
+    transition: all 0.3s;
+    font-family: 'Josefin Sans', sans-serif;
+    position: relative;
     white-space: nowrap;
   }
-  .dl-tab-btn.active, .dl-tab-btn:hover {
-    background: var(--accent); color: var(--black); border-color: var(--accent);
+  .dl-tab-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 1px;
+    background: #c9a96e;
+    transition: width 0.3s;
+  }
+  .dl-tab-btn.active {
+    color: #c9a96e;
+  }
+  .dl-tab-btn.active::after {
+    width: 100%;
+  }
+  .dl-tab-btn:hover {
+    color: rgba(245,242,238,0.7);
   }
   .dl-process-timeline { display: none; animation: dlFadeIn 0.5s forwards; }
   .dl-process-timeline.active { display: block; }
@@ -1064,7 +1089,13 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
             )}
 
             {servicios.map((_, i) => (
-              <div key={i} className={`dl-process-timeline${activeTab === i ? ' active' : ''}`}>
+              <div
+                key={i}
+                style={{
+                  display: activeTab === i ? 'block' : 'none',
+                  animation: activeTab === i ? 'dlFadeIn 0.4s forwards' : 'none',
+                }}
+              >
                 <div style={{ position: 'relative' }}>
                   <div className="dl-timeline-line" />
                   <div className="dl-timeline-steps">
