@@ -26,8 +26,11 @@ const CSS_STYLES = `
     min-height: 100vh;
   }
 
-  #dl-root *, #dl-root *::before, #dl-root *::after {
-    margin: 0; padding: 0; box-sizing: border-box;
+  #dl-root *::before, #dl-root *::after {
+    box-sizing: border-box;
+  }
+  #dl-root * {
+    box-sizing: border-box;
   }
 
   #dl-root ::-webkit-scrollbar { width: 3px; }
