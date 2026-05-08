@@ -571,16 +571,16 @@ const CSS_STYLES = `
   @media (max-width: 900px) {
     .dl-wa-float {
       position: fixed;
-      bottom: 24px;
-      right: 24px;
+      bottom: 20px;
+      right: 16px;
       z-index: 8999;
       background: #25D366;
       color: #fff;
       border: none;
       border-radius: 50px;
-      padding: 14px 20px;
+      padding: 12px 18px;
       font-family: 'Josefin Sans', sans-serif;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 400;
       letter-spacing: 0.2em;
       text-transform: uppercase;
@@ -597,18 +597,162 @@ const CSS_STYLES = `
   /* ── RESPONSIVE ── */
   @media (max-width: 900px) {
     .dl-side-indicator { display: none; }
-    .dl-services-header { flex-direction: column; gap: 24px; padding: 0 24px 48px; }
-    .dl-services-grid { grid-template-columns: 1fr; padding: 0 24px; }
-    .dl-services-intro { max-width: 100%; }
-    .dl-process-inner { padding: 0 24px; }
-    .dl-about-inner { grid-template-columns: 1fr; padding: 0 24px; gap: 48px; }
-    .dl-about-visual { aspect-ratio: 16/9; }
-    .dl-contact-inner { grid-template-columns: 1fr; padding: 0 24px; gap: 48px; }
-    .dl-footer { flex-direction: column; gap: 24px; text-align: center; padding: 32px 24px; }
-    .dl-timeline-steps { flex-direction: column; align-items: flex-start; gap: 32px; }
-    .dl-timeline-line { display: none; }
-    .dl-timeline-step { flex-direction: row; text-align: left; max-width: 100%; gap: 16px; }
     .dl-scroll-down { display: none; }
+
+    /* Section padding uniform (FIX 11) */
+    #dl-services,
+    #dl-proceso,
+    #dl-nosotros,
+    #dl-contacto {
+      padding: 72px 0;
+    }
+
+    /* Hero (FIX 1) */
+    .dl-hero-content {
+      padding: 0 20px;
+    }
+    .dl-hero-title {
+      font-size: clamp(36px, 10vw, 52px);
+    }
+    .dl-hero-eyebrow {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+    }
+    .dl-hero-subtitle {
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      margin-bottom: 32px;
+    }
+    .dl-hero-cta-group {
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+    /* Ocultar botón secundario en mobile — el WA flotante lo reemplaza */
+    .dl-hero-cta-group .dl-btn-ghost {
+      display: none;
+    }
+    .dl-hero-signature {
+      display: none;
+    }
+
+    /* Marquee (FIX 9) */
+    .dl-marquee-track {
+      animation-duration: 12s;
+    }
+
+    /* Servicios (FIX 3) */
+    .dl-services-header {
+      flex-direction: column;
+      gap: 20px;
+      padding: 0 20px 40px;
+    }
+    .dl-services-grid {
+      grid-template-columns: 1fr;
+      padding: 0 20px;
+    }
+    .dl-service-card {
+      padding: 32px 24px;
+    }
+    .dl-services-intro {
+      max-width: 100%;
+      font-size: 13px;
+    }
+
+    /* Proceso — tabs scroll horizontal (FIX 4) */
+    .dl-process-inner {
+      padding: 0 20px;
+    }
+    .dl-process-tabs {
+      overflow-x: auto;
+      justify-content: flex-start;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: 0;
+    }
+    .dl-process-tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .dl-tab-btn {
+      flex-shrink: 0;
+      padding: 8px 16px;
+    }
+
+    /* Timeline (FIX 5) */
+    .dl-timeline-line { display: none; }
+    .dl-timeline-steps {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 28px;
+    }
+    .dl-timeline-step {
+      flex-direction: row;
+      text-align: left;
+      max-width: 100%;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .dl-step-label {
+      font-size: 15px;
+      text-align: left;
+    }
+    .dl-step-desc {
+      text-align: left;
+      font-size: 11px;
+    }
+
+    /* Nosotros (FIX 6) */
+    .dl-about-inner {
+      grid-template-columns: 1fr;
+      padding: 0 20px;
+      gap: 32px;
+    }
+    .dl-about-visual {
+      aspect-ratio: 3/2;
+      min-height: 220px;
+    }
+    .dl-about-year {
+      font-size: 56px;
+    }
+    .dl-stat-number {
+      font-size: 48px;
+    }
+    .dl-about-credentials {
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* Contacto (FIX 7) */
+    .dl-contact-inner {
+      grid-template-columns: 1fr;
+      padding: 0 20px;
+      gap: 40px;
+    }
+    .dl-contact-heading {
+      font-size: clamp(40px, 12vw, 60px);
+      margin: 16px 0 28px;
+    }
+    .dl-form-submit {
+      flex-direction: column;
+      gap: 12px;
+    }
+    .dl-submit-btn {
+      width: 100%;
+      text-align: center;
+      justify-content: center;
+    }
+    .dl-whatsapp-link {
+      justify-content: center;
+    }
+
+    /* Footer (FIX 8) */
+    footer, .dl-footer {
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+      padding: 24px 20px;
+    }
   }
 `;
 
@@ -668,9 +812,22 @@ const NAV_STYLES = `
   .dl-nav-cta:hover { background: #f5f2ee; color: #080808; }
   .dl-nav-cta svg { width: 10px; height: 10px; }
   @media (max-width: 900px) {
-    .dl-nav { padding: 24px 24px; }
+    .dl-nav { padding: 14px 20px; }
     .dl-nav-monogram { display: none; }
     .dl-nav-links { display: none; }
+    .dl-nav-cta {
+      padding: 8px 14px;
+      font-size: 9px;
+      letter-spacing: 0.15em;
+    }
+    .dl-nav-logo {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+    }
+    .dl-nav-logo span {
+      font-size: 8px;
+      letter-spacing: 0.3em;
+    }
   }
 `;
 
