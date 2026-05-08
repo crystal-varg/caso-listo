@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { TemplateProps } from './registry';
 
 const CSS_STYLES = `
@@ -54,61 +55,7 @@ const CSS_STYLES = `
     border-color: var(--accent);
   }
 
-  /* ── NAV ── */
-  .dl-nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 28px 48px;
-    background: linear-gradient(to bottom, rgba(8,8,8,0.95) 0%, transparent 100%);
-    transition: all 0.4s;
-  }
-  .dl-nav.scrolled {
-    background: rgba(8,8,8,0.96);
-    backdrop-filter: blur(20px);
-    padding: 18px 48px;
-    border-bottom: 1px solid var(--border);
-  }
-  .dl-nav-logo {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 13px; font-weight: 300;
-    letter-spacing: 0.25em; text-transform: uppercase;
-    color: var(--white); text-decoration: none;
-    display: flex; flex-direction: column; gap: 2px;
-    flex-shrink: 0;
-  }
-  .dl-nav-logo span { font-size: 9px; color: var(--accent); letter-spacing: 0.4em; }
-
-  .dl-nav-links {
-    display: flex; align-items: center; gap: 32px; list-style: none;
-  }
-  .dl-nav-links a {
-    font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
-    color: var(--muted); text-decoration: none; transition: color 0.3s;
-    position: relative; cursor: none;
-  }
-  .dl-nav-links a::after {
-    content: ''; position: absolute; bottom: -4px; left: 0;
-    width: 0; height: 1px; background: var(--accent); transition: width 0.3s;
-  }
-  .dl-nav-links a:hover { color: var(--white); }
-  .dl-nav-links a:hover::after { width: 100%; }
-
-  .dl-nav-monogram {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 22px; font-weight: 400; letter-spacing: 0.1em;
-    border: 1px solid var(--border); padding: 6px 14px;
-    color: var(--white); flex-shrink: 0;
-  }
-
-  .dl-nav-cta {
-    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
-    border: 1px solid var(--white); padding: 10px 22px;
-    background: transparent; color: var(--white); cursor: none;
-    transition: all 0.3s; text-decoration: none;
-    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-  }
-  .dl-nav-cta:hover { background: var(--white); color: var(--black); }
-  .dl-nav-cta svg { width: 10px; height: 10px; }
+  /* ── NAV styles moved to NAV_STYLES (rendered via portal) ── */
 
   /* ── SIDE INDICATOR ── */
   .dl-side-indicator {
@@ -564,9 +511,6 @@ const CSS_STYLES = `
 
   /* ── RESPONSIVE ── */
   @media (max-width: 900px) {
-    .dl-nav { padding: 24px 24px; }
-    .dl-nav-monogram { display: none; }
-    .dl-nav-links { display: none; }
     .dl-side-indicator { display: none; }
     .dl-services-header { flex-direction: column; gap: 24px; padding: 0 24px 48px; }
     .dl-services-grid { grid-template-columns: 1fr; padding: 0 24px; }
@@ -580,6 +524,68 @@ const CSS_STYLES = `
     .dl-timeline-line { display: none; }
     .dl-timeline-step { flex-direction: row; text-align: left; max-width: 100%; gap: 16px; }
     .dl-scroll-down { display: none; }
+  }
+`;
+
+const NAV_STYLES = `
+  .dl-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9000;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 28px 48px;
+    background: linear-gradient(to bottom, rgba(8,8,8,0.95) 0%, transparent 100%);
+    transition: all 0.4s;
+    font-family: 'Josefin Sans', sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+  }
+  .dl-nav.scrolled {
+    background: rgba(8,8,8,0.96);
+    backdrop-filter: blur(20px);
+    padding: 18px 48px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .dl-nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px; font-weight: 300;
+    letter-spacing: 0.25em; text-transform: uppercase;
+    color: #f5f2ee; text-decoration: none;
+    display: flex; flex-direction: column; gap: 2px;
+    flex-shrink: 0; cursor: none;
+  }
+  .dl-nav-logo span { font-size: 9px; color: #c9a96e; letter-spacing: 0.4em; }
+  .dl-nav-links {
+    display: flex; align-items: center; gap: 32px; list-style: none;
+  }
+  .dl-nav-links a {
+    font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase;
+    color: rgba(245,242,238,0.45); text-decoration: none; transition: color 0.3s;
+    position: relative; cursor: none;
+  }
+  .dl-nav-links a::after {
+    content: ''; position: absolute; bottom: -4px; left: 0;
+    width: 0; height: 1px; background: #c9a96e; transition: width 0.3s;
+  }
+  .dl-nav-links a:hover { color: #f5f2ee; }
+  .dl-nav-links a:hover::after { width: 100%; }
+  .dl-nav-monogram {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 400; letter-spacing: 0.1em;
+    border: 1px solid rgba(255,255,255,0.08); padding: 6px 14px;
+    color: #f5f2ee; flex-shrink: 0;
+  }
+  .dl-nav-cta {
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    border: 1px solid #f5f2ee; padding: 10px 22px;
+    background: transparent; color: #f5f2ee; cursor: none;
+    transition: all 0.3s; display: flex; align-items: center; gap: 8px;
+    flex-shrink: 0; font-family: 'Josefin Sans', sans-serif;
+  }
+  .dl-nav-cta:hover { background: #f5f2ee; color: #080808; }
+  .dl-nav-cta svg { width: 10px; height: 10px; }
+  @media (max-width: 900px) {
+    .dl-nav { padding: 24px 24px; }
+    .dl-nav-monogram { display: none; }
+    .dl-nav-links { display: none; }
   }
 `;
 
@@ -639,12 +645,16 @@ function splitTitle(nombre: string): string[] {
 export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [cursorVisible, setCursorVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [formError, setFormError] = useState('');
   const [form, setForm] = useState({
     nombre_cliente: '', email: '', telefono: '',
     tipo_caso: '', urgencia: '', mensaje: '',
   });
+
+  // Portal mount flag — createPortal requires a real document, only available client-side.
+  useEffect(() => { setMounted(true); }, []);
 
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
@@ -771,25 +781,17 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
     }
   };
 
-  return (
-    <div id="dl-root">
-      <style dangerouslySetInnerHTML={{ __html: CSS_STYLES }} />
-
-      {/* Cursor */}
-      <div
-        ref={dotRef}
-        className="dl-cursor-dot"
-        style={{ opacity: cursorVisible ? 1 : 0 }}
-      />
-      <div
-        ref={ringRef}
-        className="dl-cursor-ring"
-        style={{ opacity: cursorVisible ? 1 : 0 }}
-      />
-
-      {/* Nav */}
+  // Nav rendered via portal (see return) so it escapes any stacking context
+  // created by template animations/transforms below in #dl-root.
+  const navElement = (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: NAV_STYLES }} />
       <nav ref={navRef} className="dl-nav">
-        <a href="#" className="dl-nav-logo" onClick={e => { e.preventDefault(); scrollTo('dl-hero'); }}>
+        <a
+          href="#"
+          className="dl-nav-logo"
+          onClick={e => { e.preventDefault(); scrollTo('dl-hero'); }}
+        >
           {config.nombre_completo
             .split(' ')
             .filter(w => !['estudio','contable','jurídico','juridico',
@@ -823,6 +825,47 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
           </svg>
         </button>
       </nav>
+    </>
+  );
+
+  return (
+    <>
+      {/* Nav via portal — escapa del stacking context del template */}
+      {mounted && createPortal(navElement, document.body)}
+
+      {/* Cursor via portal — same reason; uses inline styles since CSS vars from #dl-root don't reach document.body */}
+      {mounted && createPortal(
+        <>
+          <div
+            ref={dotRef}
+            className="dl-cursor-dot"
+            style={{
+              opacity: cursorVisible ? 1 : 0,
+              position: 'fixed', zIndex: 9999, pointerEvents: 'none',
+              width: 6, height: 6, borderRadius: '50%',
+              background: '#c9a96e',
+              transform: 'translate(-50%,-50%)',
+              transition: 'transform 0.1s, opacity 0.3s',
+            }}
+          />
+          <div
+            ref={ringRef}
+            className="dl-cursor-ring"
+            style={{
+              opacity: cursorVisible ? 1 : 0,
+              position: 'fixed', zIndex: 9998, pointerEvents: 'none',
+              width: 36, height: 36, borderRadius: '50%',
+              border: '1px solid rgba(201,169,110,0.5)',
+              transform: 'translate(-50%,-50%)',
+              transition: 'width 0.3s, height 0.3s, border-color 0.3s, opacity 0.3s',
+            }}
+          />
+        </>,
+        document.body,
+      )}
+
+      <div id="dl-root">
+      <style dangerouslySetInnerHTML={{ __html: CSS_STYLES }} />
 
       {/* Side indicator */}
       <div className="dl-side-indicator">
@@ -1171,6 +1214,7 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
           )}
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
