@@ -151,6 +151,8 @@ const CSS_STYLES = `
     font-size: 10px; letter-spacing: 0.35em; text-transform: uppercase;
     color: var(--muted); margin-top: 24px; margin-bottom: 48px;
     opacity: 0; animation: dlFadeUp 0.8s 0.6s forwards;
+    white-space: normal;
+    overflow: visible;
   }
   .dl-hero-divider {
     width: 1px; height: 60px;
@@ -1189,7 +1191,7 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
             {titleLines[2]}
           </h1>
           <p className="dl-hero-subtitle">
-            {config.nombre_completo.split(' ')[0]}&nbsp;·&nbsp;{config.descripcion?.slice(0, 60) ?? 'Asesoramiento Profesional Integral'}
+            {config.nombre_completo.split(' ')[0]}&nbsp;·&nbsp;{config.descripcion ?? 'Asesoramiento Profesional Integral'}
           </p>
           {config.hero?.tagline && (
             <p style={{
