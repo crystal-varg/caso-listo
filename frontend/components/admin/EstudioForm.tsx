@@ -7,6 +7,7 @@ import { TEMPLATE_REGISTRY, DEFAULT_TEMPLATE_ID } from '@/templates/registry';
 interface Servicio {
   titulo: string;
   descripcion: string;
+  nombre_corto?: string;
 }
 
 interface Credencial {
@@ -41,6 +42,28 @@ interface EstudioConfigData {
     instagram?: string;
     linkedin?: string;
   };
+  hero?: {
+    tagline?: string;
+    eyebrow?: string;
+    cta_primario?: string;
+    cta_secundario?: string;
+  };
+  trust?: {
+    matricula?: string;
+    entidad?: string;
+    numero_sindico?: string;
+    badges?: string[];
+  };
+  contacto_config?: {
+    tiempo_respuesta?: string;
+    mensaje_whatsapp?: string;
+    mostrar_horarios?: boolean;
+    horarios?: string;
+  };
+  mobile?: {
+    cta_flotante?: boolean;
+    cta_texto?: string;
+  };
 }
 
 interface Props {
@@ -50,6 +73,13 @@ interface Props {
 }
 
 const DEFAULT_AREAS = ['Civil / Comercial', 'Laboral', 'Penal', 'Familia', 'Sin definir'];
+
+const SUGGESTED_BADGES = [
+  'Atención personalizada',
+  'Reserva profesional',
+  '40+ años de trayectoria',
+  'Respuesta en 24hs',
+];
 
 export default function EstudioForm({ initialData, slug, modo }: Props) {
   const router = useRouter();
@@ -113,6 +143,31 @@ export default function EstudioForm({ initialData, slug, modo }: Props) {
   const [redInstagram, setRedInstagram] = useState(cfg.redes?.instagram ?? '');
   const [redLinkedin, setRedLinkedin] = useState(cfg.redes?.linkedin ?? '');
 
+  // Hero (Propuesta de Valor)
+  const [heroTagline, setHeroTagline] = useState(cfg.hero?.tagline ?? '');
+  const [heroEyebrow, setHeroEyebrow] = useState(cfg.hero?.eyebrow ?? '');
+  const [heroCtaPrimario, setHeroCtaPrimario] = useState(cfg.hero?.cta_primario ?? '');
+  const [heroCtaSecundario, setHeroCtaSecundario] = useState(cfg.hero?.cta_secundario ?? '');
+
+  // Trust (Credenciales Profesionales)
+  const [trustMatricula, setTrustMatricula] = useState(cfg.trust?.matricula ?? '');
+  const [trustEntidad, setTrustEntidad] = useState(cfg.trust?.entidad ?? '');
+  const [trustNumeroSindico, setTrustNumeroSindico] = useState(cfg.trust?.numero_sindico ?? '');
+  const [trustBadges, setTrustBadges] = useState<string[]>(
+    Array.isArray(cfg.trust?.badges) ? (cfg.trust!.badges as string[]) : [],
+  );
+  const [nuevaTrustBadge, setNuevaTrustBadge] = useState('');
+
+  // Contacto config
+  const [ccTiempoRespuesta, setCcTiempoRespuesta] = useState(cfg.contacto_config?.tiempo_respuesta ?? '');
+  const [ccMensajeWhatsapp, setCcMensajeWhatsapp] = useState(cfg.contacto_config?.mensaje_whatsapp ?? '');
+  const [ccMostrarHorarios, setCcMostrarHorarios] = useState<boolean>(cfg.contacto_config?.mostrar_horarios ?? false);
+  const [ccHorarios, setCcHorarios] = useState(cfg.contacto_config?.horarios ?? '');
+
+  // Mobile
+  const [mobCtaFlotante, setMobCtaFlotante] = useState<boolean>(cfg.mobile?.cta_flotante ?? true);
+  const [mobCtaTexto, setMobCtaTexto] = useState(cfg.mobile?.cta_texto ?? '');
+
   // UI state
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
@@ -156,6 +211,19 @@ export default function EstudioForm({ initialData, slug, modo }: Props) {
   const removeCredencial = (i: number) =>
     setCredenciales(credenciales.filter((_, idx) => idx !== i));
 
+  const addBadge = () => {
+    const val = nuevaTrustBadge.trim();
+    if (!val) return;
+    if (trustBadges.includes(val)) { setNuevaTrustBadge(''); return; }
+    setTrustBadges([...trustBadges, val]);
+    setNuevaTrustBadge('');
+  };
+  const addBadgeFromSuggestion = (s: string) => {
+    if (trustBadges.includes(s)) return;
+    setTrustBadges([...trustBadges, s]);
+  };
+  const removeBadge = (b: string) => setTrustBadges(trustBadges.filter((x) => x !== b));
+
   const buildConfig = () => ({
     nombre_completo: nombreCompleto.trim(),
     descripcion: descripcion.trim(),
@@ -167,7 +235,16 @@ export default function EstudioForm({ initialData, slug, modo }: Props) {
     direccion: direccion.trim() || undefined,
     areas,
     servicios: servicios
-      .map((s) => ({ titulo: s.titulo.trim(), descripcion: s.descripcion.trim() }))
+      .map((s) => {
+        const titulo = s.titulo.trim();
+        const descripcion = s.descripcion.trim();
+        const nombre_corto = s.nombre_corto?.trim();
+        return {
+          titulo,
+          descripcion,
+          ...(nombre_corto ? { nombre_corto } : {}),
+        };
+      })
       .filter((s) => s.titulo.length > 0),
     seo: {
       titulo: seoTitulo.trim(),
@@ -190,6 +267,28 @@ export default function EstudioForm({ initialData, slug, modo }: Props) {
       facebook: redFacebook.trim() || undefined,
       instagram: redInstagram.trim() || undefined,
       linkedin: redLinkedin.trim() || undefined,
+    },
+    hero: {
+      tagline: heroTagline.trim() || undefined,
+      eyebrow: heroEyebrow.trim() || undefined,
+      cta_primario: heroCtaPrimario.trim() || undefined,
+      cta_secundario: heroCtaSecundario.trim() || undefined,
+    },
+    trust: {
+      matricula: trustMatricula.trim() || undefined,
+      entidad: trustEntidad.trim() || undefined,
+      numero_sindico: trustNumeroSindico.trim() || undefined,
+      badges: trustBadges.length > 0 ? trustBadges : undefined,
+    },
+    contacto_config: {
+      tiempo_respuesta: ccTiempoRespuesta.trim() || undefined,
+      mensaje_whatsapp: ccMensajeWhatsapp.trim() || undefined,
+      mostrar_horarios: ccMostrarHorarios || undefined,
+      horarios: ccHorarios.trim() || undefined,
+    },
+    mobile: {
+      cta_flotante: mobCtaFlotante,
+      cta_texto: mobCtaTexto.trim() || undefined,
     },
   });
 
@@ -277,6 +376,52 @@ export default function EstudioForm({ initialData, slug, modo }: Props) {
         </section>
       )}
 
+      {/* Propuesta de Valor — primera sección porque alimenta el hero del landing */}
+      <section style={{ borderBottom: '1px solid #f0f0f0', paddingBottom: 22 }}>
+        <h2 style={sectionTitleStyle}>Propuesta de Valor</h2>
+        <div style={fieldsCol}>
+          <div>
+            <label className="label">Tagline del estudio *</label>
+            <input
+              className="input"
+              value={heroTagline}
+              onChange={(e) => setHeroTagline(e.target.value)}
+              placeholder="Ej: Contabilidad, impuestos y derecho para empresas y personas en Resistencia, Chaco"
+            />
+            <span style={{ fontSize: 12, color: '#9ca3af' }}>
+              Esta frase aparece en el hero del sitio. Debe responder: ¿qué resuelvo y para quién?
+            </span>
+          </div>
+          <div>
+            <label className="label">Texto eyebrow (sobre el título)</label>
+            <input
+              className="input"
+              value={heroEyebrow}
+              onChange={(e) => setHeroEyebrow(e.target.value)}
+              placeholder="Ej: Resistencia, Chaco · Desde 1985"
+            />
+          </div>
+          <div>
+            <label className="label">Botón principal</label>
+            <input
+              className="input"
+              value={heroCtaPrimario}
+              onChange={(e) => setHeroCtaPrimario(e.target.value)}
+              placeholder="Ver Servicios (default)"
+            />
+          </div>
+          <div>
+            <label className="label">Botón secundario</label>
+            <input
+              className="input"
+              value={heroCtaSecundario}
+              onChange={(e) => setHeroCtaSecundario(e.target.value)}
+              placeholder="Contactar (default)"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* Identidad */}
       <section>
         <h2 style={sectionTitleStyle}>Identidad del estudio</h2>
@@ -351,6 +496,55 @@ export default function EstudioForm({ initialData, slug, modo }: Props) {
               placeholder="Av. Siempreviva 742, Resistencia"
             />
           </div>
+        </div>
+      </section>
+
+      {/* Configuración del Contacto */}
+      <section style={{ borderTop: '1px solid #f0f0f0', paddingTop: 22 }}>
+        <h2 style={sectionTitleStyle}>Configuración del Contacto</h2>
+        <div style={fieldsCol}>
+          <div>
+            <label className="label">Tiempo de respuesta</label>
+            <input
+              className="input"
+              value={ccTiempoRespuesta}
+              onChange={(e) => setCcTiempoRespuesta(e.target.value)}
+              placeholder="Ej: Le respondemos en menos de 24hs hábiles"
+            />
+            <span style={{ fontSize: 12, color: '#9ca3af' }}>
+              Se muestra debajo del botón de envío del formulario de contacto.
+            </span>
+          </div>
+          <div>
+            <label className="label">Mensaje pre-cargado de WhatsApp</label>
+            <input
+              className="input"
+              value={ccMensajeWhatsapp}
+              onChange={(e) => setCcMensajeWhatsapp(e.target.value)}
+              placeholder="Ej: Hola, los contacto desde su web para una consulta."
+            />
+          </div>
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={ccMostrarHorarios}
+                onChange={(e) => setCcMostrarHorarios(e.target.checked)}
+              />
+              <span className="label" style={{ marginBottom: 0 }}>¿Mostrar horarios de atención?</span>
+            </label>
+          </div>
+          {ccMostrarHorarios && (
+            <div>
+              <label className="label">Horarios</label>
+              <input
+                className="input"
+                value={ccHorarios}
+                onChange={(e) => setCcHorarios(e.target.value)}
+                placeholder="Ej: Lunes a Viernes de 8:00 a 18:00hs"
+              />
+            </div>
+          )}
         </div>
       </section>
 
@@ -459,35 +653,82 @@ export default function EstudioForm({ initialData, slug, modo }: Props) {
       {/* Servicios */}
       <section style={{ borderTop: '1px solid #f0f0f0', paddingTop: 22 }}>
         <h2 style={sectionTitleStyle}>Servicios</h2>
-        {servicios.map((s, i) => (
-          <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 14, marginBottom: 8 }}>
-            <input
-              className="input"
-              placeholder="Título del servicio"
-              value={s.titulo}
-              onChange={(e) => updateServicio(i, { titulo: e.target.value })}
-            />
-            <textarea
-              className="input"
-              placeholder="Descripción"
-              value={s.descripcion}
-              onChange={(e) => updateServicio(i, { descripcion: e.target.value })}
-              rows={2}
-              style={{ marginTop: 8 }}
-            />
-            <button
-              type="button"
-              className="btn-ghost"
-              style={{ marginTop: 8, fontSize: 12, color: '#dc2626' }}
-              onClick={() => removeServicio(i)}
-            >
-              × Eliminar
-            </button>
-          </div>
-        ))}
+        {servicios.map((s, i) => {
+          const ncLen = s.nombre_corto?.length ?? 0;
+          return (
+            <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 14, marginBottom: 8 }}>
+              <input
+                className="input"
+                placeholder="Título del servicio"
+                value={s.titulo}
+                onChange={(e) => updateServicio(i, { titulo: e.target.value })}
+              />
+              <textarea
+                className="input"
+                placeholder="Descripción"
+                value={s.descripcion}
+                onChange={(e) => updateServicio(i, { descripcion: e.target.value })}
+                rows={2}
+                style={{ marginTop: 8 }}
+              />
+              <label className="label" style={{ marginTop: 8 }}>
+                Nombre corto (para tabs){' '}
+                <span style={{ fontSize: 11, color: ncLen > 12 ? '#dc2626' : '#9ca3af', fontWeight: 400 }}>
+                  {ncLen}/15
+                </span>
+              </label>
+              <input
+                className="input"
+                placeholder="Ej: Impositivo (max 15 caracteres)"
+                value={s.nombre_corto ?? ''}
+                onChange={(e) => updateServicio(i, { nombre_corto: e.target.value })}
+                maxLength={15}
+              />
+              <button
+                type="button"
+                className="btn-ghost"
+                style={{ marginTop: 8, fontSize: 12, color: '#dc2626' }}
+                onClick={() => removeServicio(i)}
+              >
+                × Eliminar
+              </button>
+            </div>
+          );
+        })}
         <button type="button" className="btn-ghost" onClick={addServicio} style={{ fontSize: 13 }}>
           + Agregar servicio
         </button>
+      </section>
+
+      {/* Mobile */}
+      <section style={{ borderTop: '1px solid #f0f0f0', paddingTop: 22 }}>
+        <h2 style={sectionTitleStyle}>Mobile</h2>
+        <div style={fieldsCol}>
+          <div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={mobCtaFlotante}
+                onChange={(e) => setMobCtaFlotante(e.target.checked)}
+              />
+              <span className="label" style={{ marginBottom: 0 }}>Botón flotante de WhatsApp</span>
+            </label>
+            <span style={{ fontSize: 12, color: '#9ca3af', display: 'block', marginTop: 4 }}>
+              Muestra un botón fijo en la parte inferior de la pantalla en celulares. Usa el número de WhatsApp configurado arriba.
+            </span>
+          </div>
+          {mobCtaFlotante && (
+            <div>
+              <label className="label">Texto del botón flotante</label>
+              <input
+                className="input"
+                value={mobCtaTexto}
+                onChange={(e) => setMobCtaTexto(e.target.value)}
+                placeholder="Consultar por WhatsApp (default)"
+              />
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Template del sitio */}
@@ -632,6 +873,106 @@ export default function EstudioForm({ initialData, slug, modo }: Props) {
             <button type="button" className="btn-ghost" onClick={addCredencial} style={{ fontSize: 13 }}>
               + Agregar credencial
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Credenciales Profesionales */}
+      <section style={{ borderTop: '1px solid #f0f0f0', paddingTop: 22 }}>
+        <h2 style={sectionTitleStyle}>Credenciales Profesionales</h2>
+        <div style={fieldsCol}>
+          <div>
+            <label className="label">Matrícula profesional</label>
+            <input
+              className="input"
+              value={trustMatricula}
+              onChange={(e) => setTrustMatricula(e.target.value)}
+              placeholder="Ej: T° 1 F° 234 CPCE Chaco"
+            />
+          </div>
+          <div>
+            <label className="label">Entidad colegiadora</label>
+            <input
+              className="input"
+              value={trustEntidad}
+              onChange={(e) => setTrustEntidad(e.target.value)}
+              placeholder="Ej: FACPCE · CPCE Chaco · Colegio de Abogados de Chaco"
+            />
+          </div>
+          <div>
+            <label className="label">Nº Síndico Concursal (opcional)</label>
+            <input
+              className="input"
+              value={trustNumeroSindico}
+              onChange={(e) => setTrustNumeroSindico(e.target.value)}
+              placeholder="Solo si corresponde"
+            />
+          </div>
+          <div>
+            <label className="label">Badges de confianza</label>
+            <div>
+              {trustBadges.length === 0 && (
+                <span style={{ fontSize: 12, color: '#9ca3af' }}>Aún no agregaste badges.</span>
+              )}
+              {trustBadges.map((b) => (
+                <span
+                  key={b}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    background: '#faeeda', color: '#633806', padding: '3px 10px', borderRadius: 20,
+                    fontSize: 13, margin: '0 4px 4px 0',
+                  }}
+                >
+                  {b}
+                  <button
+                    type="button"
+                    onClick={() => removeBadge(b)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#633806', fontSize: 16, lineHeight: 1, padding: 0 }}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <input
+                className="input"
+                value={nuevaTrustBadge}
+                onChange={(e) => setNuevaTrustBadge(e.target.value)}
+                placeholder="Ej: 40+ años de trayectoria"
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addBadge(); } }}
+              />
+              <button type="button" className="btn-ghost" onClick={addBadge} style={{ fontSize: 13 }}>
+                Agregar
+              </button>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <span style={{ fontSize: 11, color: '#9ca3af', marginRight: 6, display: 'block', marginBottom: 6 }}>
+                Sugeridos:
+              </span>
+              {SUGGESTED_BADGES.map((s) => {
+                const already = trustBadges.includes(s);
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => addBadgeFromSuggestion(s)}
+                    disabled={already}
+                    style={{
+                      fontSize: 12,
+                      background: already ? '#f3f4f6' : '#fff',
+                      border: '1px dashed #e5e7eb',
+                      color: already ? '#9ca3af' : '#374151',
+                      padding: '3px 10px', borderRadius: 20,
+                      margin: '0 4px 4px 0',
+                      cursor: already ? 'default' : 'pointer',
+                    }}
+                  >
+                    + {s}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>

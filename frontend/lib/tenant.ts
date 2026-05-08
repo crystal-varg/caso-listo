@@ -19,7 +19,11 @@ export interface TenantConfig {
   email_contacto?: string;
   direccion?: string;
   areas?: string[];
-  servicios?: Array<{ titulo: string; descripcion: string }>;
+  servicios?: Array<{
+    titulo: string;
+    descripcion: string;
+    nombre_corto?: string;
+  }>;
   seo?: { titulo?: string; descripcion?: string; keywords?: string[] };
   template_id?: string;
   sobre_nosotros?: SobreNosotros;
@@ -28,6 +32,32 @@ export interface TenantConfig {
     instagram?: string;
     linkedin?: string;
     twitter?: string;
+  };
+
+  hero?: {
+    tagline?: string;
+    eyebrow?: string;
+    cta_primario?: string;
+    cta_secundario?: string;
+  };
+
+  trust?: {
+    matricula?: string;
+    entidad?: string;
+    numero_sindico?: string;
+    badges?: string[];
+  };
+
+  contacto_config?: {
+    tiempo_respuesta?: string;
+    mensaje_whatsapp?: string;
+    mostrar_horarios?: boolean;
+    horarios?: string;
+  };
+
+  mobile?: {
+    cta_flotante?: boolean;
+    cta_texto?: string;
   };
 }
 
