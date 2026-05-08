@@ -416,35 +416,55 @@ const CSS_STYLES = `
   .dl-contact-row-value:hover { color: var(--accent); }
   .dl-contact-form { display: flex; flex-direction: column; gap: 0; }
   .dl-form-group {
-    border-bottom: 1px solid var(--border); padding: 20px 0;
-    display: flex; flex-direction: column; gap: 8px;
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
   }
-  .dl-form-label {
-    font-size: 8px; letter-spacing: 0.4em; text-transform: uppercase; color: var(--muted);
+  .dl-form-group:focus-within {
+    border-bottom-color: rgba(201,169,110,0.6);
   }
-  .dl-form-input, .dl-form-textarea {
-    background: transparent; border: none; outline: none;
-    color: var(--white); font-family: 'Josefin Sans', sans-serif;
-    font-size: 13px; font-weight: 300; letter-spacing: 0.05em; width: 100%; padding: 4px 0;
-  }
-  .dl-form-input::placeholder, .dl-form-textarea::placeholder { color: var(--muted); }
-  .dl-form-textarea { resize: none; height: 80px; }
-  .dl-form-select {
+  .dl-form-input, .dl-form-textarea, .dl-form-select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 2px;
+    outline: none;
+    color: #f5f2ee;
+    font-family: 'Josefin Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    width: 100%;
+    padding: 12px 14px;
+    transition: border-color 0.3s, background 0.3s;
     -webkit-appearance: none;
     appearance: none;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--white);
-    font-family: 'Josefin Sans', sans-serif;
-    font-size: 13px; font-weight: 300;
-    letter-spacing: 0.05em;
-    width: 100%; padding: 4px 0;
-    cursor: none;
+  }
+  .dl-form-input:focus,
+  .dl-form-textarea:focus,
+  .dl-form-select:focus {
+    border-color: rgba(201,169,110,0.7);
+    background: rgba(201,169,110,0.05);
+  }
+  .dl-form-input::placeholder,
+  .dl-form-textarea::placeholder {
+    color: rgba(245,242,238,0.25);
+    font-style: italic;
+  }
+  .dl-form-textarea {
+    resize: none;
+    height: 100px;
   }
   .dl-form-select option {
     background: #111111;
     color: #f5f2ee;
+  }
+  .dl-form-label {
+    font-size: 8px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: rgba(201,169,110,0.7);
   }
   .dl-form-submit {
     margin-top: 40px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
@@ -700,6 +720,7 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
   const dotRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
+  const scrollDownRef = useRef<HTMLDivElement>(null);
   const rxRef = useRef(0);
   const ryRef = useRef(0);
   const mxRef = useRef(0);
@@ -748,11 +769,17 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
     };
   }, [cursorVisible]);
 
-  // Nav scroll
+  // Nav scroll + hide scroll-down indicator past hero
   useEffect(() => {
     const onScroll = () => {
       if (navRef.current) {
         navRef.current.classList.toggle('scrolled', window.scrollY > 60);
+      }
+      if (scrollDownRef.current) {
+        const heroEl = document.getElementById('dl-hero');
+        const heroBottom = heroEl ? heroEl.offsetTop + heroEl.offsetHeight : 0;
+        scrollDownRef.current.style.opacity = window.scrollY > heroBottom - 100 ? '0' : '1';
+        scrollDownRef.current.style.transition = 'opacity 0.4s';
       }
     };
     window.addEventListener('scroll', onScroll);
@@ -918,7 +945,7 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
       </div>
 
       {/* Scroll line */}
-      <div className="dl-scroll-down">
+      <div className="dl-scroll-down" ref={scrollDownRef}>
         <div className="dl-scroll-line" />
       </div>
 
