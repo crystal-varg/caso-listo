@@ -21,9 +21,10 @@ export interface EstudioConfig {
   email_contacto?: string;
   direccion?: string;
   areas: string[];
-  servicios: Array<{
+  servicios?: Array<{
     titulo: string;
     descripcion: string;
+    nombre_corto?: string; // max 15 chars, para tabs de proceso
   }>;
   seo: {
     titulo: string;
@@ -54,6 +55,36 @@ export interface EstudioConfig {
     instagram?: string;
     linkedin?: string;
     twitter?: string;
+  };
+
+  // ── HERO ──────────────────────────────────────────────────
+  hero?: {
+    tagline?: string;
+    eyebrow?: string;
+    cta_primario?: string;
+    cta_secundario?: string;
+  };
+
+  // ── TRUST SIGNALS ─────────────────────────────────────────
+  trust?: {
+    matricula?: string;
+    entidad?: string;
+    numero_sindico?: string;
+    badges?: string[];
+  };
+
+  // ── CONTACTO ──────────────────────────────────────────────
+  contacto_config?: {
+    tiempo_respuesta?: string;
+    mensaje_whatsapp?: string;
+    mostrar_horarios?: boolean;
+    horarios?: string;
+  };
+
+  // ── MOBILE ────────────────────────────────────────────────
+  mobile?: {
+    cta_flotante?: boolean;
+    cta_texto?: string;
   };
 }
 
