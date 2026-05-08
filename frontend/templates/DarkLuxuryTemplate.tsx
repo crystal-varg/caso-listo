@@ -124,6 +124,9 @@ const CSS_STYLES = `
   }
   .dl-hero-content {
     position: relative; z-index: 10; text-align: center; padding: 0 24px;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
   }
   .dl-hero-eyebrow {
     font-size: 10px; letter-spacing: 0.45em; text-transform: uppercase;
@@ -188,6 +191,7 @@ const CSS_STYLES = `
   .dl-marquee-wrap {
     border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
     overflow: hidden; padding: 18px 0; background: var(--surface);
+    width: 100%;
   }
   .dl-marquee-track {
     display: flex; gap: 64px;
@@ -474,6 +478,8 @@ const CSS_STYLES = `
   .dl-footer {
     border-top: 1px solid var(--border); padding: 32px 80px;
     background: var(--black); display: flex; align-items: center; justify-content: space-between;
+    max-width: 100%;
+    margin: 0 auto;
   }
   .dl-footer-copy { font-size: 9px; letter-spacing: 0.2em; color: var(--muted); }
   .dl-footer-url {

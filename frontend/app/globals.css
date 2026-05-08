@@ -38,3 +38,22 @@ body {
 .input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 14px; color: var(--text); background: white; transition: border-color 0.15s; outline: none; }
 .input:focus { border-color: var(--brand); }
 .label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+
+/* ── Dark Luxury Template overrides ── */
+#dl-root {
+  background: #080808 !important;
+  color: #f5f2ee !important;
+  font-family: 'Josefin Sans', sans-serif !important;
+}
+
+/* Evitar que el body background gris tape el template */
+body:has(#dl-root) {
+  background: #080808 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Evitar que Tailwind preflight rompa el layout del template */
+#dl-root * {
+  box-sizing: border-box;
+}
