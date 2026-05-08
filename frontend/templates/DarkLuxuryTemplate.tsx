@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { TemplateProps } from './registry';
 import type { TenantConfig } from '@/lib/tenant';
@@ -676,6 +676,8 @@ const NAV_STYLES = `
 
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+
 const GENERIC_STEPS = [
   { label: 'Consulta Inicial', desc: 'Evaluación de su situación particular' },
   { label: 'Análisis y Estrategia', desc: 'Definición del plan de acción' },
@@ -738,6 +740,9 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
     nombre_cliente: '', email: '', telefono: '',
     tipo_caso: '', urgencia: '', mensaje: '',
   });
+  const [formStep, setFormStep] = useState<1 | 2>(1);
+  const [dniFile, setDniFile] = useState<File | null>(null);
+  const [docsFile, setDocsFile] = useState<File | null>(null);
 
   // Portal mount flag — createPortal requires a real document, only available client-side.
   useEffect(() => { setMounted(true); }, []);
@@ -746,6 +751,8 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
   const ringRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const scrollDownRef = useRef<HTMLDivElement>(null);
+  const dniInputRef = useRef<HTMLInputElement>(null);
+  const docsInputRef = useRef<HTMLInputElement>(null);
   const rxRef = useRef(0);
   const ryRef = useRef(0);
   const mxRef = useRef(0);
@@ -848,8 +855,27 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleStep1Continue = () => {
+    if (!form.nombre_cliente.trim() || !form.email.trim() || !form.mensaje.trim()) {
+      setFormError('Complete los campos obligatorios');
+      return;
+    }
+    setFormError('');
+    setFormStep(2);
+  };
+
+  const handleFilePick = (file: File | null | undefined, setter: (f: File | null) => void) => {
+    if (!file) { setter(null); return; }
+    if (file.size > MAX_FILE_BYTES) {
+      setFormError('El archivo supera el límite de 5MB');
+      return;
+    }
+    setFormError('');
+    setter(file);
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setFormStatus('loading');
     setFormError('');
     try {
@@ -861,6 +887,19 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
       if (form.urgencia) fd.append('urgencia', form.urgencia);
       fd.append('mensaje', form.mensaje);
 
+      // Archivos opcionales — si el usuario no subió nada, marcamos como 'faltante'
+      // para que el backend distinga "no quiso adjuntar" vs "se cayó el upload".
+      if (dniFile) {
+        fd.append('dni_archivo', dniFile);
+      } else {
+        fd.append('dni_estado', 'faltante');
+      }
+      if (docsFile) {
+        fd.append('docs_archivo', docsFile);
+      } else {
+        fd.append('docs_estado', 'faltante');
+      }
+
       const res = await fetch(`/api/consultas/publica/${slug}`, {
         method: 'POST',
         body: fd,
@@ -870,6 +909,9 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
         throw new Error(err.message || 'Error al enviar la consulta.');
       }
       setFormStatus('success');
+      setFormStep(1);
+      setDniFile(null);
+      setDocsFile(null);
     } catch (err: any) {
       setFormError(err.message || 'Ocurrió un error. Intente nuevamente.');
       setFormStatus('error');
@@ -1277,95 +1319,310 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
                 )}
               </div>
             ) : (
-              <form className="dl-contact-form dl-reveal dl-reveal-d2" onSubmit={handleSubmit}>
-                <div className="dl-form-group">
-                  <label className="dl-form-label">Nombre completo *</label>
-                  <input
-                    className="dl-form-input" name="nombre_cliente" required
-                    placeholder="Ingrese su nombre" value={form.nombre_cliente} onChange={handleChange}
-                  />
+              <form
+                className="dl-contact-form dl-reveal dl-reveal-d2"
+                onSubmit={(e) => { e.preventDefault(); }}
+              >
+                {/* Step indicator */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 32 }}>
+                  {[1, 2].map((step) => (
+                    <Fragment key={step}>
+                      <div style={{
+                        width: 24, height: 24,
+                        border: `1px solid ${formStep >= step ? '#c9a96e' : 'rgba(255,255,255,0.15)'}`,
+                        borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 10,
+                        color: formStep >= step ? '#c9a96e' : 'rgba(245,242,238,0.25)',
+                        transition: 'all 0.3s',
+                      }}>
+                        {formStep > step ? '✓' : step}
+                      </div>
+                      {step < 2 && (
+                        <div style={{
+                          flex: 1, height: 1,
+                          background: formStep > step ? '#c9a96e' : 'rgba(255,255,255,0.1)',
+                          transition: 'background 0.3s',
+                        }} />
+                      )}
+                    </Fragment>
+                  ))}
                 </div>
-                <div className="dl-form-group">
-                  <label className="dl-form-label">Email *</label>
-                  <input
-                    className="dl-form-input" name="email" type="email" required
-                    placeholder="su@email.com" value={form.email} onChange={handleChange}
-                  />
-                </div>
-                <div className="dl-form-group">
-                  <label className="dl-form-label">Teléfono</label>
-                  <input
-                    className="dl-form-input" name="telefono"
-                    placeholder="+54 ..." value={form.telefono} onChange={handleChange}
-                  />
-                </div>
-                {areas.length > 0 && (
-                  <div className="dl-form-group">
-                    <label className="dl-form-label">Área de consulta</label>
-                    <select className="dl-form-select" name="tipo_caso" value={form.tipo_caso} onChange={handleChange}>
-                      <option value="">Seleccione un área...</option>
-                      {areas.map(area => (
-                        <option key={area} value={area}>{area}</option>
-                      ))}
-                    </select>
-                  </div>
+
+                {formStep === 1 && (
+                  <>
+                    <div className="dl-form-group">
+                      <label className="dl-form-label">Nombre completo *</label>
+                      <input
+                        className="dl-form-input" name="nombre_cliente" required
+                        placeholder="Ingrese su nombre" value={form.nombre_cliente} onChange={handleChange}
+                      />
+                    </div>
+                    <div className="dl-form-group">
+                      <label className="dl-form-label">Email *</label>
+                      <input
+                        className="dl-form-input" name="email" type="email" required
+                        placeholder="su@email.com" value={form.email} onChange={handleChange}
+                      />
+                    </div>
+                    <div className="dl-form-group">
+                      <label className="dl-form-label">Teléfono</label>
+                      <input
+                        className="dl-form-input" name="telefono"
+                        placeholder="+54 ..." value={form.telefono} onChange={handleChange}
+                      />
+                    </div>
+                    {areas.length > 0 && (
+                      <div className="dl-form-group">
+                        <label className="dl-form-label">Área de consulta</label>
+                        <select className="dl-form-select" name="tipo_caso" value={form.tipo_caso} onChange={handleChange}>
+                          <option value="">Seleccione un área...</option>
+                          {areas.map(area => (
+                            <option key={area} value={area}>{area}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    <div className="dl-form-group">
+                      <label className="dl-form-label">Urgencia</label>
+                      <select className="dl-form-select" name="urgencia" value={form.urgencia} onChange={handleChange}>
+                        <option value="">Seleccione...</option>
+                        <option value="baja">Baja — consulta general</option>
+                        <option value="media">Media — requiere atención pronto</option>
+                        <option value="alta">Alta — urgente</option>
+                      </select>
+                    </div>
+                    <div className="dl-form-group">
+                      <label className="dl-form-label">Mensaje *</label>
+                      <textarea
+                        className="dl-form-textarea" name="mensaje" required
+                        placeholder="Cuéntenos cómo podemos ayudarle..."
+                        value={form.mensaje} onChange={handleChange}
+                      />
+                    </div>
+
+                    {formError && (
+                      <p className="dl-form-error">{formError}</p>
+                    )}
+
+                    <div className="dl-form-submit">
+                      <button
+                        type="button"
+                        className="dl-submit-btn"
+                        onClick={handleStep1Continue}
+                      >
+                        Continuar →
+                      </button>
+                      {config.whatsapp && (
+                        <a
+                          href={`https://api.whatsapp.com/send?phone=${waNumber}&text=${encodeURIComponent(waMensaje)}`}
+                          target="_blank" rel="noreferrer"
+                          className="dl-whatsapp-link"
+                        >
+                          <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.95-1.418A9.954 9.954 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.946 7.946 0 01-4.088-1.13l-.292-.175-3.037.87.869-3.02-.19-.307A7.96 7.96 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/>
+                          </svg>
+                          WhatsApp directo
+                        </a>
+                      )}
+                    </div>
+                  </>
                 )}
-                <div className="dl-form-group">
-                  <label className="dl-form-label">Urgencia</label>
-                  <select className="dl-form-select" name="urgencia" value={form.urgencia} onChange={handleChange}>
-                    <option value="">Seleccione...</option>
-                    <option value="baja">Baja — consulta general</option>
-                    <option value="media">Media — requiere atención pronto</option>
-                    <option value="alta">Alta — urgente</option>
-                  </select>
-                </div>
-                <div className="dl-form-group">
-                  <label className="dl-form-label">Mensaje *</label>
-                  <textarea
-                    className="dl-form-textarea" name="mensaje" required
-                    placeholder="Cuéntenos cómo podemos ayudarle..."
-                    value={form.mensaje} onChange={handleChange}
-                  />
-                </div>
 
-                {formStatus === 'error' && (
-                  <p className="dl-form-error">{formError}</p>
-                )}
+                {formStep === 2 && (
+                  <>
+                    <p style={{
+                      fontSize: 9, letterSpacing: '0.4em', textTransform: 'uppercase',
+                      color: 'rgba(201,169,110,0.7)', marginBottom: 8,
+                    }}>
+                      PASO 2 DE 2
+                    </p>
+                    <p style={{
+                      fontSize: 13, color: 'rgba(245,242,238,0.6)',
+                      letterSpacing: '0.05em', marginBottom: 32, lineHeight: 1.7,
+                    }}>
+                      Adjunte documentación para agilizar su consulta.
+                      Este paso es completamente opcional.
+                    </p>
 
-                <div className="dl-form-submit">
-                  <button className="dl-submit-btn" type="submit" disabled={formStatus === 'loading'}>
-                    {formStatus === 'loading' ? 'Enviando...' : 'Enviar Consulta'}
-                  </button>
-                  {config.whatsapp && (
-                    <a
-                      href={`https://api.whatsapp.com/send?phone=${waNumber}&text=${encodeURIComponent(waMensaje)}`}
-                      target="_blank" rel="noreferrer"
-                      className="dl-whatsapp-link"
-                    >
-                      <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.95-1.418A9.954 9.954 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.946 7.946 0 01-4.088-1.13l-.292-.175-3.037.87.869-3.02-.19-.307A7.96 7.96 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/>
-                      </svg>
-                      WhatsApp directo
-                    </a>
-                  )}
-                </div>
+                    {/* DNI dropzone */}
+                    <div className="dl-form-group" style={{ borderBottom: 'none' }}>
+                      <label className="dl-form-label">FOTO DEL DNI (opcional)</label>
+                      <input
+                        ref={dniInputRef}
+                        type="file"
+                        accept="image/*,.pdf"
+                        style={{ display: 'none' }}
+                        onChange={(e) => handleFilePick(e.target.files?.[0] ?? null, setDniFile)}
+                      />
+                      <div
+                        onClick={() => dniInputRef.current?.click()}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.style.borderColor = 'rgba(201,169,110,0.7)';
+                        }}
+                        onDragLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'rgba(201,169,110,0.3)';
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.style.borderColor = 'rgba(201,169,110,0.3)';
+                          handleFilePick(e.dataTransfer.files?.[0] ?? null, setDniFile);
+                        }}
+                        style={{
+                          border: '1px dashed rgba(201,169,110,0.3)',
+                          padding: 24,
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          transition: 'border-color 0.3s',
+                        }}
+                      >
+                        {dniFile ? (
+                          <div style={{ color: '#c9a96e', fontSize: 12 }}>
+                            ✓ {dniFile.name}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setDniFile(null); }}
+                              style={{
+                                marginLeft: 8, color: 'rgba(245,242,238,0.35)',
+                                background: 'none', border: 'none', cursor: 'pointer',
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ fontSize: 24, marginBottom: 8 }}>◇</div>
+                            <div style={{
+                              fontSize: 10, letterSpacing: '0.2em',
+                              textTransform: 'uppercase', color: 'rgba(245,242,238,0.35)',
+                            }}>
+                              Clickeá para subir o arrastrá aquí
+                            </div>
+                            <div style={{
+                              fontSize: 10, color: 'rgba(245,242,238,0.2)', marginTop: 4,
+                            }}>
+                              JPG, PNG o PDF · Máximo 5MB
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                {config.contacto_config?.tiempo_respuesta && (
-                  <p style={{
-                    fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase',
-                    color: 'rgba(245,242,238,0.35)', marginTop: 16,
-                  }}>
-                    ✦ {config.contacto_config.tiempo_respuesta}
-                  </p>
-                )}
+                    {/* Documentos adicionales dropzone */}
+                    <div className="dl-form-group" style={{ borderBottom: 'none' }}>
+                      <label className="dl-form-label">DOCUMENTOS ADICIONALES (opcional)</label>
+                      <input
+                        ref={docsInputRef}
+                        type="file"
+                        accept="image/*,.pdf"
+                        style={{ display: 'none' }}
+                        onChange={(e) => handleFilePick(e.target.files?.[0] ?? null, setDocsFile)}
+                      />
+                      <div
+                        onClick={() => docsInputRef.current?.click()}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.style.borderColor = 'rgba(201,169,110,0.7)';
+                        }}
+                        onDragLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'rgba(201,169,110,0.3)';
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.style.borderColor = 'rgba(201,169,110,0.3)';
+                          handleFilePick(e.dataTransfer.files?.[0] ?? null, setDocsFile);
+                        }}
+                        style={{
+                          border: '1px dashed rgba(201,169,110,0.3)',
+                          padding: 24,
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          transition: 'border-color 0.3s',
+                        }}
+                      >
+                        {docsFile ? (
+                          <div style={{ color: '#c9a96e', fontSize: 12 }}>
+                            ✓ {docsFile.name}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setDocsFile(null); }}
+                              style={{
+                                marginLeft: 8, color: 'rgba(245,242,238,0.35)',
+                                background: 'none', border: 'none', cursor: 'pointer',
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ fontSize: 24, marginBottom: 8 }}>◇</div>
+                            <div style={{
+                              fontSize: 10, letterSpacing: '0.2em',
+                              textTransform: 'uppercase', color: 'rgba(245,242,238,0.35)',
+                            }}>
+                              Contratos, comprobantes, escrituras u otros documentos relevantes
+                            </div>
+                            <div style={{
+                              fontSize: 10, color: 'rgba(245,242,238,0.2)', marginTop: 4,
+                            }}>
+                              JPG, PNG o PDF · Máximo 5MB
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                {config.contacto_config?.mostrar_horarios && config.contacto_config?.horarios && (
-                  <p style={{
-                    fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase',
-                    color: 'rgba(245,242,238,0.35)', marginTop: 8,
-                  }}>
-                    ◇ {config.contacto_config.horarios}
-                  </p>
+                    {formError && (
+                      <p className="dl-form-error">{formError}</p>
+                    )}
+
+                    <div style={{ display: 'flex', gap: 16, marginTop: 32 }}>
+                      <button
+                        type="button"
+                        className="dl-btn-ghost"
+                        onClick={() => { setFormError(''); setFormStep(1); }}
+                        disabled={formStatus === 'loading'}
+                      >
+                        ← Volver
+                      </button>
+                      <button
+                        type="button"
+                        className="dl-submit-btn"
+                        onClick={() => handleSubmit()}
+                        disabled={formStatus === 'loading'}
+                      >
+                        {formStatus === 'loading' ? 'Enviando...' : 'Enviar Consulta'}
+                      </button>
+                    </div>
+
+                    <p style={{
+                      fontSize: 10, letterSpacing: '0.15em',
+                      color: 'rgba(245,242,238,0.2)', marginTop: 12, textAlign: 'center',
+                    }}>
+                      Podés enviar sin adjuntar documentos
+                    </p>
+
+                    {config.contacto_config?.tiempo_respuesta && (
+                      <p style={{
+                        fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase',
+                        color: 'rgba(245,242,238,0.35)', marginTop: 16, textAlign: 'center',
+                      }}>
+                        ✦ {config.contacto_config.tiempo_respuesta}
+                      </p>
+                    )}
+
+                    {config.contacto_config?.mostrar_horarios && config.contacto_config?.horarios && (
+                      <p style={{
+                        fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase',
+                        color: 'rgba(245,242,238,0.35)', marginTop: 8, textAlign: 'center',
+                      }}>
+                        ◇ {config.contacto_config.horarios}
+                      </p>
+                    )}
+                  </>
                 )}
               </form>
             )}
