@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { TemplateProps } from './registry';
+import type { TenantConfig } from '@/lib/tenant';
 
 const CSS_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Josefin+Sans:wght@100;300;400&family=Great+Vibes&display=swap');
@@ -518,6 +519,36 @@ const CSS_STYLES = `
   .dl-reveal-d4 { transition-delay: 0.4s; }
   .dl-reveal-d5 { transition-delay: 0.5s; }
 
+  /* ── FLOATING WA BUTTON (mobile only) ── */
+  @media (min-width: 901px) {
+    .dl-wa-float { display: none; }
+  }
+  @media (max-width: 900px) {
+    .dl-wa-float {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 8999;
+      background: #25D366;
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 14px 20px;
+      font-family: 'Josefin Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(37,211,102,0.4);
+      cursor: pointer;
+    }
+    .dl-wa-float svg { width: 16px; height: 16px; }
+  }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 900px) {
     .dl-side-indicator { display: none; }
@@ -627,7 +658,8 @@ function getMonogram(nombre: string): string {
   return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
-function getEyebrow(config: any): string {
+function getEyebrow(config: TenantConfig): string {
+  if (config.hero?.eyebrow) return config.hero.eyebrow;
   if (config.direccion) {
     const parts = config.direccion.split(',');
     if (parts.length >= 2) {
@@ -683,6 +715,8 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
   const eyebrow = getEyebrow(config);
   const waNumber = config.whatsapp?.replace(/\D/g, '') ?? '';
   const waFormatted = formatWhatsApp(config.whatsapp);
+  const waMensaje = config.contacto_config?.mensaje_whatsapp
+    ?? 'Hola, los contacto desde su web para una consulta.';
   const sections = ['dl-hero', 'dl-services', 'dl-proceso', 'dl-nosotros', 'dl-contacto'];
 
   // Cursor
@@ -906,16 +940,26 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
           <p className="dl-hero-subtitle">
             {config.nombre_completo.split(' ')[0]}&nbsp;·&nbsp;{config.descripcion?.slice(0, 60) ?? 'Asesoramiento Profesional Integral'}
           </p>
+          {config.hero?.tagline && (
+            <p style={{
+              fontSize: 13, letterSpacing: '0.15em', color: 'rgba(245,242,238,0.6)',
+              textTransform: 'uppercase',
+              opacity: 0, animation: 'dlFadeUp 0.8s 0.7s forwards',
+              maxWidth: 600, margin: '8px auto 40px',
+            }}>
+              {config.hero.tagline}
+            </p>
+          )}
           <div className="dl-hero-divider" />
           <div className="dl-hero-cta-group">
             <button className="dl-btn-primary" onClick={() => scrollTo('dl-services')}>
-              Ver Servicios
+              {config.hero?.cta_primario ?? 'Ver Servicios'}
               <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" width="10" height="10">
                 <path d="M1 9L9 1M9 1H3M9 1V7" />
               </svg>
             </button>
             <button className="dl-btn-ghost" onClick={() => scrollTo('dl-contacto')}>
-              Contactar
+              {config.hero?.cta_secundario ?? 'Contactar'}
             </button>
           </div>
         </div>
@@ -986,7 +1030,7 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
                     onClick={() => setActiveTab(i)}
                     title={s.titulo}
                   >
-                    {s.titulo.length > 20 ? s.titulo.slice(0, 20) + '…' : s.titulo}
+                    {s.nombre_corto ?? s.titulo}
                   </button>
                 ))}
               </div>
@@ -1054,6 +1098,56 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
                 ))}
               </div>
             )}
+
+            {(config.trust?.matricula || (config.trust?.badges && config.trust.badges.length > 0)) && (
+              <div style={{
+                marginTop: 32,
+                borderTop: '1px solid rgba(255,255,255,0.08)',
+                paddingTop: 24,
+              }}>
+                {(config.trust?.matricula || config.trust?.entidad) && (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{
+                      fontSize: 8, letterSpacing: '0.4em', textTransform: 'uppercase',
+                      color: '#c9a96e', marginBottom: 6,
+                    }}>
+                      {config.trust?.entidad ?? 'Matrícula Profesional'}
+                    </div>
+                    {config.trust?.matricula && (
+                      <div style={{
+                        fontFamily: "'Cormorant Garamond', serif",
+                        fontSize: 15, color: '#f5f2ee',
+                      }}>
+                        {config.trust.matricula}
+                      </div>
+                    )}
+                    {config.trust?.numero_sindico && (
+                      <div style={{
+                        fontSize: 11, color: 'rgba(245,242,238,0.45)',
+                        marginTop: 4, letterSpacing: '0.05em',
+                      }}>
+                        Síndico Concursal Nº {config.trust.numero_sindico}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {config.trust?.badges && config.trust.badges.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                    {config.trust.badges.map((badge, i) => (
+                      <span key={i} style={{
+                        fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
+                        border: '1px solid rgba(201,169,110,0.4)',
+                        color: '#c9a96e', padding: '4px 12px',
+                        fontFamily: "'Josefin Sans', sans-serif",
+                      }}>
+                        {badge}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -1086,7 +1180,7 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
                 <div className="dl-contact-row">
                   <span className="dl-contact-row-label">WhatsApp</span>
                   <a
-                    href={`https://api.whatsapp.com/send?phone=${waNumber}`}
+                    href={`https://api.whatsapp.com/send?phone=${waNumber}&text=${encodeURIComponent(waMensaje)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="dl-contact-row-value"
@@ -1111,7 +1205,7 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
                 </p>
                 {config.whatsapp && (
                   <a
-                    href={`https://api.whatsapp.com/send?phone=${waNumber}&text=Hola, les contacto desde la web para una consulta.`}
+                    href={`https://api.whatsapp.com/send?phone=${waNumber}&text=${encodeURIComponent(waMensaje)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="dl-whatsapp-link"
@@ -1186,7 +1280,7 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
                   </button>
                   {config.whatsapp && (
                     <a
-                      href={`https://api.whatsapp.com/send?phone=${waNumber}&text=Hola, los contacto desde la web para una consulta.`}
+                      href={`https://api.whatsapp.com/send?phone=${waNumber}&text=${encodeURIComponent(waMensaje)}`}
                       target="_blank" rel="noreferrer"
                       className="dl-whatsapp-link"
                     >
@@ -1197,11 +1291,44 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
                     </a>
                   )}
                 </div>
+
+                {config.contacto_config?.tiempo_respuesta && (
+                  <p style={{
+                    fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase',
+                    color: 'rgba(245,242,238,0.35)', marginTop: 16,
+                  }}>
+                    ✦ {config.contacto_config.tiempo_respuesta}
+                  </p>
+                )}
+
+                {config.contacto_config?.mostrar_horarios && config.contacto_config?.horarios && (
+                  <p style={{
+                    fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase',
+                    color: 'rgba(245,242,238,0.35)', marginTop: 8,
+                  }}>
+                    ◇ {config.contacto_config.horarios}
+                  </p>
+                )}
               </form>
             )}
           </div>
         </div>
       </section>
+
+      {/* ═══ FLOATING WA BUTTON (mobile only — CSS hides on desktop) ═══ */}
+      {(config.mobile?.cta_flotante ?? true) && config.whatsapp && (
+        <a
+          href={`https://api.whatsapp.com/send?phone=${waNumber}&text=${encodeURIComponent(waMensaje)}`}
+          target="_blank"
+          rel="noreferrer"
+          className="dl-wa-float"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.95-1.418A9.954 9.954 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18a7.946 7.946 0 01-4.088-1.13l-.292-.175-3.037.87.869-3.02-.19-.307A7.96 7.96 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/>
+          </svg>
+          {config.mobile?.cta_texto ?? 'Consultar por WhatsApp'}
+        </a>
+      )}
 
       {/* ═══ FOOTER ═══ */}
       <footer className="dl-footer">
@@ -1219,7 +1346,7 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
             <a href={redes.instagram} target="_blank" rel="noreferrer" title="Instagram">ig</a>
           )}
           {config.whatsapp && (
-            <a href={`https://api.whatsapp.com/send?phone=${waNumber}`} target="_blank" rel="noreferrer" title="WhatsApp">w</a>
+            <a href={`https://api.whatsapp.com/send?phone=${waNumber}&text=${encodeURIComponent(waMensaje)}`} target="_blank" rel="noreferrer" title="WhatsApp">w</a>
           )}
         </div>
       </footer>
