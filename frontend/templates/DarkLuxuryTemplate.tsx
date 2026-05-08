@@ -214,7 +214,7 @@ const CSS_STYLES = `
 
   /* ── SECTION COMMONS ── */
   .dl-section-label {
-    font-size: 9px; letter-spacing: 0.5em; text-transform: uppercase;
+    font-size: 10px; letter-spacing: 0.5em; text-transform: uppercase;
     color: var(--accent); margin-bottom: 16px;
     display: flex; align-items: center; gap: 16px;
   }
@@ -257,13 +257,13 @@ const CSS_STYLES = `
   .dl-service-card:hover::before { width: 100%; }
   .dl-service-number {
     font-family: 'Cormorant Garamond', serif;
-    font-size: 11px; letter-spacing: 0.3em; color: var(--accent); margin-bottom: 32px;
+    font-size: 12px; letter-spacing: 0.3em; color: var(--accent); margin-bottom: 32px;
   }
   .dl-service-name {
     font-family: 'Cormorant Garamond', serif;
     font-size: 24px; font-weight: 400; line-height: 1.3; margin-bottom: 16px;
   }
-  .dl-service-desc { font-size: 12px; line-height: 1.8; color: var(--muted); }
+  .dl-service-desc { font-size: 13px; line-height: 2; color: var(--muted); }
   .dl-service-arrow {
     position: absolute; bottom: 32px; right: 36px;
     width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 50%;
@@ -349,7 +349,7 @@ const CSS_STYLES = `
     font-size: 16px; font-weight: 400; text-align: center; line-height: 1.3;
   }
   .dl-step-desc {
-    font-size: 10px; line-height: 1.7; color: var(--muted);
+    font-size: 11px; line-height: 1.7; color: var(--muted);
     text-align: center; letter-spacing: 0.05em;
   }
 
@@ -398,17 +398,17 @@ const CSS_STYLES = `
     font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 300;
     line-height: 1.7; color: rgba(245,242,238,0.8); margin: 32px 0; font-style: italic;
   }
-  .dl-about-desc { font-size: 12px; line-height: 2; color: var(--muted); margin-bottom: 20px; }
+  .dl-about-desc { font-size: 13px; line-height: 2.1; color: var(--muted); margin-bottom: 20px; }
   .dl-about-credentials {
     margin-top: 48px; border-top: 1px solid var(--border); padding-top: 32px;
     display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
   }
   .dl-credential-label {
-    font-size: 8px; letter-spacing: 0.4em; text-transform: uppercase;
+    font-size: 9px; letter-spacing: 0.35em; text-transform: uppercase;
     color: var(--accent); margin-bottom: 8px;
   }
   .dl-credential-value {
-    font-family: 'Cormorant Garamond', serif; font-size: 16px;
+    font-family: 'Cormorant Garamond', serif; font-size: 17px;
     font-weight: 400; color: var(--white);
   }
 
@@ -432,10 +432,10 @@ const CSS_STYLES = `
     border-bottom: 1px solid var(--border); padding-bottom: 24px;
   }
   .dl-contact-row-label {
-    font-size: 8px; letter-spacing: 0.5em; text-transform: uppercase; color: var(--accent);
+    font-size: 9px; letter-spacing: 0.5em; text-transform: uppercase; color: var(--accent);
   }
   .dl-contact-row-value {
-    font-family: 'Cormorant Garamond', serif; font-size: 18px;
+    font-family: 'Cormorant Garamond', serif; font-size: 19px;
     color: var(--white); text-decoration: none; transition: color 0.3s;
   }
   .dl-contact-row-value:hover { color: var(--accent); }
@@ -486,7 +486,7 @@ const CSS_STYLES = `
     color: #f5f2ee;
   }
   .dl-form-label {
-    font-size: 8px;
+    font-size: 9px;
     letter-spacing: 0.4em;
     text-transform: uppercase;
     color: rgba(201,169,110,0.7);
@@ -530,7 +530,7 @@ const CSS_STYLES = `
     max-width: 100%;
     margin: 0 auto;
   }
-  .dl-footer-copy { font-size: 9px; letter-spacing: 0.2em; color: var(--muted); }
+  .dl-footer-copy { font-size: 10px; letter-spacing: 0.2em; color: var(--muted); }
   .dl-footer-url {
     font-family: 'Cormorant Garamond', serif; font-size: 11px;
     letter-spacing: 0.2em; color: var(--muted); text-decoration: none; transition: color 0.3s;
@@ -1215,8 +1215,12 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
                     </div>
                     {config.trust?.matricula && (
                       <div style={{
-                        fontFamily: "'Cormorant Garamond', serif",
-                        fontSize: 15, color: '#f5f2ee',
+                        fontFamily: "'Josefin Sans', sans-serif",
+                        fontSize: 14,
+                        fontWeight: 300,
+                        color: '#f5f2ee',
+                        letterSpacing: '0.25em',
+                        textTransform: 'uppercase' as const,
                       }}>
                         {config.trust.matricula}
                       </div>
@@ -1432,13 +1436,13 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
                 {formStep === 2 && (
                   <>
                     <p style={{
-                      fontSize: 9, letterSpacing: '0.4em', textTransform: 'uppercase',
+                      fontSize: 11, letterSpacing: '0.4em', textTransform: 'uppercase',
                       color: 'rgba(201,169,110,0.7)', marginBottom: 8,
                     }}>
                       PASO 2 DE 2
                     </p>
                     <p style={{
-                      fontSize: 13, color: 'rgba(245,242,238,0.6)',
+                      fontSize: 14, color: 'rgba(245,242,238,0.55)',
                       letterSpacing: '0.05em', marginBottom: 32, lineHeight: 1.7,
                     }}>
                       Adjunte documentación para agilizar su consulta.
@@ -1493,15 +1497,15 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
                           </div>
                         ) : (
                           <div>
-                            <div style={{ fontSize: 24, marginBottom: 8 }}>◇</div>
+                            <div style={{ fontSize: 28, marginBottom: 8, color: 'rgba(201,169,110,0.5)' }}>◇</div>
                             <div style={{
-                              fontSize: 10, letterSpacing: '0.2em',
-                              textTransform: 'uppercase', color: 'rgba(245,242,238,0.35)',
+                              fontSize: 12, letterSpacing: '0.2em',
+                              textTransform: 'uppercase', color: 'rgba(245,242,238,0.5)',
                             }}>
                               Clickeá para subir o arrastrá aquí
                             </div>
                             <div style={{
-                              fontSize: 10, color: 'rgba(245,242,238,0.2)', marginTop: 4,
+                              fontSize: 12, color: 'rgba(245,242,238,0.3)', marginTop: 4,
                             }}>
                               JPG, PNG o PDF · Máximo 5MB
                             </div>
@@ -1558,15 +1562,15 @@ export default function DarkLuxuryTemplate({ slug, config }: TemplateProps) {
                           </div>
                         ) : (
                           <div>
-                            <div style={{ fontSize: 24, marginBottom: 8 }}>◇</div>
+                            <div style={{ fontSize: 28, marginBottom: 8, color: 'rgba(201,169,110,0.5)' }}>◇</div>
                             <div style={{
-                              fontSize: 10, letterSpacing: '0.2em',
-                              textTransform: 'uppercase', color: 'rgba(245,242,238,0.35)',
+                              fontSize: 12, letterSpacing: '0.2em',
+                              textTransform: 'uppercase', color: 'rgba(245,242,238,0.5)',
                             }}>
                               Contratos, comprobantes, escrituras u otros documentos relevantes
                             </div>
                             <div style={{
-                              fontSize: 10, color: 'rgba(245,242,238,0.2)', marginTop: 4,
+                              fontSize: 12, color: 'rgba(245,242,238,0.3)', marginTop: 4,
                             }}>
                               JPG, PNG o PDF · Máximo 5MB
                             </div>
