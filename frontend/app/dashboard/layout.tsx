@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SearchModal } from '@/components/SearchModal';
+import Logo from '@/components/Logo';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Inicio', icon: '🏠', exact: true },
@@ -113,9 +114,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }}>
         {(!collapsed || isMobile) && (
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#111', whiteSpace: 'nowrap' }}>
-              Caso<span style={{ color: '#4f46e5' }}>Listo</span>
-            </div>
+            <Logo height={24} />
             {estudio && (
               <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>
                 {estudio.nombre_estudio}

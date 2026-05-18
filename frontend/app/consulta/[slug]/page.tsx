@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { API_URL } from '@/lib/api';
+import Logo from '@/components/Logo';
 
 interface ConsultaForm {
   nombre_cliente: string;
@@ -167,8 +168,8 @@ export default function ConsultaPublicaPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 32, textAlign: 'center' }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#111', marginBottom: 8 }}>
-            Caso<span style={{ color: '#4f46e5' }}>Listo</span>
+          <div style={{ marginBottom: 8 }}>
+            <Logo height={32} />
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#111', margin: '0 0 8px' }}>Envianos tu consulta</h1>
           <p style={{ color: '#6b7280', fontSize: 15, margin: 0 }}>Completá el formulario y te respondemos a la brevedad.</p>

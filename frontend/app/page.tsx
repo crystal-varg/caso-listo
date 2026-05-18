@@ -1,3 +1,5 @@
+import Logo from '@/components/Logo';
+
 export default function HomePage() {
   return (
     <div style={{
@@ -6,9 +8,7 @@ export default function HomePage() {
       background: '#f7f7fb',
     }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 36, fontWeight: 800, color: '#111' }}>
-          Caso<span style={{ color: '#4f46e5' }}>Listo</span>
-        </div>
+        <Logo height={48} />
         <p style={{ color: '#6b7280', marginTop: 12, fontSize: 16 }}>
           El sistema de gestión para estudios jurídicos y contables.
         </p>

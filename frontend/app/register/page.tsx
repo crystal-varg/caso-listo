@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
+import Logo from '@/components/Logo';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -38,9 +39,7 @@ export default function RegisterPage() {
       <div style={{ width: '100%', maxWidth: 440 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <Link href="/" style={{ textDecoration: 'none' }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: '#111' }}>
-              Caso<span style={{ color: '#4f46e5' }}>Listo</span>
-            </div>
+            <Logo height={36} />
           </Link>
           <p style={{ color: '#6b7280', marginTop: 8, fontSize: 15 }}>Creá tu cuenta en 30 segundos</p>
         </div>
