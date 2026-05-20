@@ -123,7 +123,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         )}
         {collapsed && !isMobile && (
-          <span style={{ fontSize: 18, fontWeight: 800, color: '#4f46e5' }}>C</span>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/logo.svg" height="24" style={{ width: 'auto' }} alt="CasoListo" />
         )}
         {!isMobile && (
           <button
