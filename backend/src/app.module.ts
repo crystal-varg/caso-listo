@@ -63,8 +63,8 @@ function getDbConfig() {
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: 15 * 60 * 1000, // 15 min
-        limit: 100,
+        ttl: 60 * 1000, // 60 segundos
+        limit: 20,
       },
     ]),
     AuthModule,

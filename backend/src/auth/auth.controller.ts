@@ -105,7 +105,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  @Throttle({ default: { limit: 5, ttl: 15 * 60 * 1000 } })
+  @Throttle({ default: { limit: 20, ttl: 60 * 1000 } })
   async login(
     @Body() dto: LoginDto,
     @Response({ passthrough: true }) res: ExpressResponse,
