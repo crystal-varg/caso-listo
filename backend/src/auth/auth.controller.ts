@@ -112,7 +112,15 @@ export class AuthController {
   ) {
     const result = await this.authService.login(dto.email, dto.password);
     setAuthCookies(res, result.accessToken, result.refreshToken);
-    return { usuario: result.usuario, estudio: result.estudio };
+    // accessToken también incluido en el body para clientes que no pueden usar
+    // cookies httpOnly (la app mobile lo guarda en AsyncStorage). Las cookies
+    // siguen siendo el camino primario para el frontend web; este campo es
+    // ignorado por código de browser que no lo lee.
+    return {
+      usuario: result.usuario,
+      estudio: result.estudio,
+      accessToken: result.accessToken,
+    };
   }
 
   @Post('register')
