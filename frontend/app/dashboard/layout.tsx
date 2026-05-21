@@ -111,6 +111,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         alignItems: 'center',
         justifyContent: collapsed && !isMobile ? 'center' : 'space-between',
         minHeight: 60,
+        overflow: 'hidden',
+        transition: 'width 0.2s ease',
       }}>
         {(!collapsed || isMobile) && (
           <div>
@@ -124,7 +126,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
         {collapsed && !isMobile && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src="/logo.svg" height="24" style={{ width: 'auto' }} alt="CasoListo" />
+          <img
+            src="/logo.svg"
+            alt="CasoListo"
+            style={{
+              width: 32,
+              height: 32,
+              objectFit: 'contain',
+              flexShrink: 0,
+            }}
+          />
         )}
         {!isMobile && (
           <button
