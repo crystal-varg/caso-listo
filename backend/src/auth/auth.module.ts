@@ -24,7 +24,10 @@ import { MailModule } from '../mail/mail.module';
     JwtModule.registerAsync({
       useFactory: () => ({
         secret: process.env.JWT_SECRET as string,
-        signOptions: { expiresIn: '15m' },
+        // Default override-able por opciones inline en cada jwtService.sign().
+        // signAccess() en auth.service.ts pasa ACCESS_TOKEN_JWT_EXPIRES de
+        // cookie.config.ts, que es lo que efectivamente gobierna el JWT.
+        signOptions: { expiresIn: '7d' },
       }),
     }),
   ],

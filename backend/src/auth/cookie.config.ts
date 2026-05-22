@@ -9,8 +9,16 @@ export const ACCESS_TOKEN_TTL_MS = 15 * 60 * 1000;
 /** Refresh token lifetime — 7 days. */
 export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** Access token JWT `expiresIn` — matches the cookie Max-Age. */
-export const ACCESS_TOKEN_JWT_EXPIRES = '15m';
+/**
+ * Access token JWT `expiresIn`.
+ *
+ * 7d permite que la app mobile mantenga sesión sin un flujo de refresh
+ * propio (lee el JWT del body de /auth/login y lo guarda en AsyncStorage).
+ * En web, la cookie de access_token sigue teniendo Max-Age 15min
+ * (ACCESS_TOKEN_TTL_MS), por lo que el browser la descarta a los 15min y
+ * el flujo de refresh sigue funcionando igual que antes.
+ */
+export const ACCESS_TOKEN_JWT_EXPIRES = '7d';
 
 function baseCookie(maxAgeMs: number): CookieOptions {
   return {
