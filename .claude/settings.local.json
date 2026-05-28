@@ -21,7 +21,9 @@
       "Bash(echo \"EXIT_MOBILE=$?\")",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(node .claude/skills/impeccable/scripts/load-context.mjs)",
+      "Bash(node \"C:\\\\Users\\\\littl\\\\.claude\\\\skills\\\\impeccable\\\\scripts\\\\load-context.mjs\")"
     ]
   }
 }

@@ -323,8 +323,6 @@ const CSS_STYLES = `
   .dl-tab-btn:hover {
     color: rgba(245,242,238,0.7);
   }
-  .dl-process-timeline { display: none; animation: dlFadeIn 0.5s forwards; }
-  .dl-process-timeline.active { display: block; }
   .dl-timeline-line {
     position: absolute; top: 16px; left: 0; right: 0; height: 1px;
     background: linear-gradient(to right, transparent, var(--border), var(--accent), var(--border), transparent);
