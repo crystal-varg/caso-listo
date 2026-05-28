@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ConfigModule } from '@nestjs/config';
+
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ConsultasModule } from './consultas/consultas.module';
@@ -12,6 +14,7 @@ import { HonorariosModule } from './honorarios/honorarios.module';
 import { ActividadModule } from './actividad/actividad.module';
 import { EventosModule } from './eventos/eventos.module';
 import { NotificacionesModule } from './notificaciones/notificaciones.module';
+
 import { Usuario } from './users/usuario.entity';
 import { Consulta } from './consultas/consulta.entity';
 import { Estudio } from './estudios/estudio.entity';
@@ -31,6 +34,7 @@ function getDbConfig() {
       ssl: isProd ? { rejectUnauthorized: false } : false,
     };
   }
+
   return {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
@@ -43,6 +47,10 @@ function getDbConfig() {
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+
     TypeOrmModule.forRoot({
       type: 'postgres',
       ...getDbConfig(),
@@ -60,13 +68,15 @@ function getDbConfig() {
       synchronize: true,
       logging: false,
     }),
+
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: 60 * 1000, // 60 segundos
+        ttl: 60 * 1000,
         limit: 20,
       },
     ]),
+
     AuthModule,
     UsersModule,
     ConsultasModule,
@@ -78,8 +88,12 @@ function getDbConfig() {
     EventosModule,
     NotificacionesModule,
   ],
+
   providers: [
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}
