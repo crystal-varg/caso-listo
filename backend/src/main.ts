@@ -51,11 +51,27 @@ async function bootstrap() {
   // ── CORS (must register BEFORE helmet) ────────────────────────────────────
   // Helmet otherwise responds to OPTIONS preflights without
   // Access-Control-Allow-Origin, blocking the browser before CORS can answer.
+  // Hosting platforms assign per-deploy subdomains, so we also allow any
+  // HTTPS origin under these registrable suffixes in addition to the explicit
+  // ALLOWED_ORIGINS allowlist.
+  const ALLOWED_ORIGIN_SUFFIXES = ['.vercel.app', '.railway.app', '.onrender.com'];
+
   app.enableCors({
     origin: (origin, callback) => {
       // Allow same-origin / Postman / server-to-server (no Origin header).
       if (!origin) return callback(null, true);
       if (env.ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+      try {
+        const { protocol, hostname } = new URL(origin);
+        if (
+          protocol === 'https:' &&
+          ALLOWED_ORIGIN_SUFFIXES.some((suffix) => hostname.endsWith(suffix))
+        ) {
+          return callback(null, true);
+        }
+      } catch {
+        // Malformed origin — fall through to rejection.
+      }
       // Do not echo the origin back — simply reject.
       callback(new Error(`Origen no permitido: ${origin}`));
     },
