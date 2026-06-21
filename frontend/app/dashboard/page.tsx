@@ -64,7 +64,7 @@ const TIPO_EVENTO_EMOJI: Record<string, string> = {
   audiencia: '⚖️', vencimiento: '📌', recordatorio: '🔔',
 };
 
-const URGENCIA_EMOJI: Record<string, string> = { alta: '🔴', media: '🟡', baja: '🟢' };
+const URGENCIA_COLOR: Record<string, string> = { alta: '#ef4444', media: '#f59e0b', baja: '#10b981' };
 
 const ESTADO_CFG: Record<string, { label: string; color: string; bg: string }> = {
   nuevo:      { label: 'Nuevo',      color: '#1d4ed8', bg: '#dbeafe' },
@@ -145,7 +145,7 @@ export default function DashboardPage() {
     id: `cn-${c.id}`,
     emoji: '📋',
     titulo: `Nueva consulta de ${c.nombre_cliente}`,
-    descripcion: c.urgencia === 'alta' ? '🔴 Urgente' : (casoLabel(c) === 'Sin clasificar' ? 'Sin clasificar' : casoLabel(c)),
+    descripcion: c.urgencia === 'alta' ? 'Urgente' : (casoLabel(c) === 'Sin clasificar' ? 'Sin clasificar' : casoLabel(c)),
     accion: 'Ver consulta',
     color: '#dc2626', bg: '#fff5f5', border: '#fca5a5',
     href: `/dashboard/consultas/${c.id}`,
@@ -225,8 +225,10 @@ export default function DashboardPage() {
       {/* ── HEADER ─────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 26, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 25, fontWeight: 700, color: '#111', margin: 0 }}>
-            {saludo}, {usuario?.nombre?.split(' ')[0]} 👋
+          <h1 style={{ fontSize: 25, fontWeight: 700, color: '#111', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>{saludo}, {usuario?.nombre?.split(' ')[0]}</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/icons/wave.svg" alt="" width={20} height={20} style={{ flexShrink: 0 }} />
           </h1>
           <p style={{ color: '#6b7280', marginTop: 5, fontSize: 14, margin: '5px 0 0' }}>
             {prioridades.length > 0
@@ -253,7 +255,7 @@ export default function DashboardPage() {
             padding: '14px 20px', borderBottom: '1px solid #f0f0f0',
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
-            <span style={{ fontSize: 15 }}>🔴</span>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', flexShrink: 0 }} />
             <span style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Prioridades del día</span>
             <span style={{
               background: '#fee2e2', color: '#dc2626', fontSize: 11,
@@ -269,7 +271,7 @@ export default function DashboardPage() {
               <span style={{ fontSize: 20, flexShrink: 0 }}>{p.emoji}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: p.color }}>{p.titulo}</div>
-                <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{p.descripcion}</div>
+                <div style={{ fontSize: 12, color: p.descripcion === 'Urgente' ? '#ef4444' : '#6b7280', marginTop: 2 }}>{p.descripcion}</div>
               </div>
               {p.waLink ? (
                 <a href={p.waLink} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
@@ -317,7 +319,8 @@ export default function DashboardPage() {
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <span>📅</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/icons/calendar.svg" alt="" width={18} height={18} style={{ flexShrink: 0 }} />
                 <span style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Hoy</span>
                 {eventosHoy.length > 0 && (
                   <span style={{ background: '#eef2ff', color: '#4f46e5', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 20 }}>
@@ -405,7 +408,8 @@ export default function DashboardPage() {
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <span>💰</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icons/currency.svg" alt="" width={18} height={18} style={{ flexShrink: 0 }} />
               <span style={{ fontWeight: 700, fontSize: 15, color: '#111' }}>Ingresos a cobrar</span>
             </div>
             <Link href="/dashboard/honorarios" style={{ fontSize: 12, color: '#4f46e5', textDecoration: 'none', fontWeight: 600 }}>
@@ -445,7 +449,11 @@ export default function DashboardPage() {
                   <div style={{ display: 'flex', gap: 6 }}>
                     {wa && (
                       <a href={wa} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
-                        <button className="btn-ghost" style={{ fontSize: 11, padding: '3px 9px' }}>💬 WA</button>
+                        <button className="btn-ghost" style={{ fontSize: 11, padding: '3px 9px', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src="/icons/whatsapp.svg" alt="" width={14} height={14} style={{ flexShrink: 0 }} />
+                          WA
+                        </button>
                       </a>
                     )}
                     <button
@@ -505,7 +513,7 @@ export default function DashboardPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginBottom: 3 }}>
                       <span style={{ fontWeight: 600, fontSize: 13, color: '#111' }}>{c.nombre_cliente}</span>
-                      {c.urgencia && URGENCIA_EMOJI[c.urgencia] && <span style={{ fontSize: 12 }}>{URGENCIA_EMOJI[c.urgencia]}</span>}
+                      {c.urgencia && URGENCIA_COLOR[c.urgencia] && <span style={{ width: 8, height: 8, borderRadius: '50%', background: URGENCIA_COLOR[c.urgencia], display: 'inline-block', flexShrink: 0 }} />}
                       {cfg && (
                         <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: cfg.bg, color: cfg.color }}>
                           {cfg.label}
