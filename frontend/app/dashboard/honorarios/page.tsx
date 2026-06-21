@@ -61,8 +61,8 @@ const ESTADO_CFG: Record<Estado, { label: string; emoji: string; bg: string; col
   pagado:     { label: 'Cobrado',    emoji: '✅', bg: '#f0fdf4', color: '#16a34a' },
 };
 
-const FILTROS: { key: Filtro; label: string; emoji: string }[] = [
-  { key: 'todos',      label: 'Todos',      emoji: '⚪' },
+const FILTROS: { key: Filtro; label: string; emoji?: string }[] = [
+  { key: 'todos',      label: 'Todos' },
   { key: 'atrasado',   label: 'Atrasados',  emoji: '🔴' },
   { key: 'por_vencer', label: 'Por vencer', emoji: '🟡' },
   { key: 'al_dia',     label: 'Al día',     emoji: '🟢' },
@@ -221,7 +221,7 @@ export default function HonorariosPage() {
               color: filtro === f.key ? '#4f46e5' : '#374151',
               fontWeight: filtro === f.key ? 600 : 400, transition: 'all 0.15s',
             }}>
-            {f.emoji} {f.label}
+            {f.emoji ? `${f.emoji} ` : ''}{f.label}
           </button>
         ))}
       </div>
@@ -300,29 +300,35 @@ export default function HonorariosPage() {
                 </div>
 
                 {/* Date */}
-                <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
-                  📅 Vence: {fmtFecha(h.fecha_vencimiento)}
+                <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/icons/calendar.svg" alt="" width={15} height={15} style={{ flexShrink: 0 }} />
+                  Vence: {fmtFecha(h.fecha_vencimiento)}
                 </div>
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {restante > 0 && (
-                    <button className="btn-ghost" style={{ fontSize: 13 }}
+                    <button className="btn-ghost" style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}
                       onClick={() => {
                         const msg = `Hola ${h.consulta.nombre_cliente.split(' ')[0]}, te escribo por el saldo pendiente del caso "${casoLabel(h.consulta)}". Cuando puedas lo vemos.`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
                       }}>
-                      💬 Recordatorio
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/icons/whatsapp.svg" alt="" width={15} height={15} style={{ flexShrink: 0 }} />
+                      Recordatorio
                     </button>
                   )}
                   {restante > 0 && (
-                    <button className="btn-primary" style={{ fontSize: 13 }}
+                    <button className="btn-primary" style={{ fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}
                       onClick={() => {
                         setCobrandoId(cobrando ? null : h.id);
                         setCobro({ tipo: 'total', monto: '' });
                         setCobroError('');
                       }}>
-                      💰 {cobrando ? 'Cancelar' : 'Marcar cobrado'}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/icons/currency-white.svg" alt="" width={15} height={15} style={{ flexShrink: 0 }} />
+                      {cobrando ? 'Cancelar' : 'Marcar cobrado'}
                     </button>
                   )}
                   <Link href={`/dashboard/consultas/${h.consulta_id}`} style={{ textDecoration: 'none' }}>

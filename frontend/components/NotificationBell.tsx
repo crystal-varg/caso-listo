@@ -104,7 +104,8 @@ export function NotificationBell() {
           color: '#374151',
         }}
       >
-        🔔
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/icons/bell.svg" alt="Notificaciones" width={18} height={18} style={{ display: 'block' }} />
         {noLeidas > 0 && (
           <span
             style={{
