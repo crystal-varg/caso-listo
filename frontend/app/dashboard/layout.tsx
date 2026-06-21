@@ -7,15 +7,62 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { SearchModal } from '@/components/SearchModal';
 import Logo from '@/components/Logo';
 
+const ICON_SIZE = 18;
+
+const ICONS: Record<string, React.ReactNode> = {
+  home: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={ICON_SIZE} height={ICON_SIZE}>
+      <path fill="currentColor" d="M4 21V9l8-6l8 6v12h-6v-7h-4v7z" />
+    </svg>
+  ),
+  clipboard: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={ICON_SIZE} height={ICON_SIZE}>
+      <path fill="currentColor" d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m-7 0a1 1 0 0 1 1 1a1 1 0 0 1-1 1a1 1 0 0 1-1-1a1 1 0 0 1 1-1" />
+    </svg>
+  ),
+  balance: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={ICON_SIZE} height={ICON_SIZE}>
+      <path fill="currentColor" d="M3 21q-.425 0-.712-.288T2 20t.288-.712T3 19h8V7.825q-.65-.225-1.125-.7T9.175 6H6l2.75 6.45q.125.275.15.563t-.025.587q-.225 1.15-1.237 1.775T5.5 16t-2.137-.625T2.125 13.6q-.05-.3-.025-.587t.15-.563L5 6H4q-.425 0-.712-.287T3 5t.288-.712T4 4h5.175q.3-.875 1.075-1.437T12 2t1.75.563T14.825 4H20q.425 0 .713.288T21 5t-.288.713T20 6h-1l2.75 6.45q.125.275.15.563t-.025.587q-.225 1.15-1.237 1.775T18.5 16t-2.137-.625t-1.238-1.775q-.05-.3-.025-.587t.15-.563L18 6h-3.175q-.225.65-.7 1.125t-1.125.7V19h8q.425 0 .713.288T22 20t-.288.713T21 21zm13.625-8h3.75L18.5 8.65zm-13 0h3.75L5.5 8.65zM12 6q.425 0 .713-.288T13 5t-.288-.712T12 4t-.712.288T11 5t.288.713T12 6" />
+    </svg>
+  ),
+  calendar: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={ICON_SIZE} height={ICON_SIZE}>
+      <path fill="currentColor" d="M19 19H5V8h14m-3-7v2H8V1H6v2H5c-1.11 0-2 .89-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-1V1m-1 11h-5v5h5z" />
+    </svg>
+  ),
+  people: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={ICON_SIZE} height={ICON_SIZE}>
+      <path fill="currentColor" d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3s1.34 3 3 3m-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5S5 6.34 5 8s1.34 3 3 3m0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5m8 0c-.29 0-.62.02-.97.05c1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5" />
+    </svg>
+  ),
+  currency: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={ICON_SIZE} height={ICON_SIZE}>
+      <path fill="currentColor" d="M21 12v-2h-4V7h-2v3h-2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h6v3h-8v2h4v3h2v-3h2a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-6v-3Z" />
+      <path fill="currentColor" d="M16 4A12 12 0 1 1 4 16A12.035 12.035 0 0 1 16 4m0-2a14 14 0 1 0 14 14A14.04 14.04 0 0 0 16 2" />
+    </svg>
+  ),
+  documents: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={ICON_SIZE} height={ICON_SIZE}>
+      <path fill="currentColor" d="M1.75 10v4c0 2.829 0 4.243.879 5.122c.217.217.467.38.763.504l-.019-.134c-.123-.918-.123-2.063-.123-3.393V7.902c0-1.33 0-2.476.123-3.393l.02-.134a2.3 2.3 0 0 0-.764.504C1.75 5.758 1.75 7.172 1.75 10m20 0v4c0 2.829 0 4.243-.879 5.122c-.217.217-.467.38-.763.504l.019-.134c.123-.918.123-2.063.123-3.393V7.902c0-1.33 0-2.476-.123-3.393l-.02-.134c.297.123.547.287.764.504c.879.879.879 2.293.879 5.121" />
+      <path fill="currentColor" fillRule="evenodd" d="M5.629 2.879C4.75 3.757 4.75 5.172 4.75 8v8c0 2.828 0 4.243.879 5.121C6.507 22 7.922 22 10.75 22h2c2.828 0 4.243 0 5.121-.879c.879-.878.879-2.293.879-5.121V8c0-2.828 0-4.243-.879-5.121C16.993 2 15.578 2 12.75 2h-2c-2.828 0-4.243 0-5.121.879M8 17a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 0 1.5h-3A.75.75 0 0 1 8 17m.75-4.75a.75.75 0 0 0 0 1.5h6a.75.75 0 0 0 0-1.5zM8 9a.75.75 0 0 1 .75-.75h6a.75.75 0 0 1 0 1.5h-6A.75.75 0 0 1 8 9" clipRule="evenodd" />
+    </svg>
+  ),
+  gear: (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={ICON_SIZE} height={ICON_SIZE}>
+      <path fill="currentColor" d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1s.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64z" />
+    </svg>
+  ),
+};
+
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Inicio', icon: '🏠', exact: true },
-  { href: '/dashboard/consultas', label: 'Consultas', icon: '📋' },
-  { href: '/dashboard/casos', label: 'Casos', icon: '⚖️' },
-  { href: '/dashboard/agenda', label: 'Agenda', icon: '📅' },
-  { href: '/dashboard/clientes', label: 'Clientes', icon: '👥' },
-  { href: '/dashboard/honorarios', label: 'Honorarios', icon: '💰' },
-  { href: '/dashboard/documentos', label: 'Documentos', icon: '📁' },
-  { href: '/dashboard/configuracion', label: 'Configuración', icon: '⚙️' },
+  { href: '/dashboard', label: 'Inicio', icon: 'home', exact: true },
+  { href: '/dashboard/consultas', label: 'Consultas', icon: 'clipboard' },
+  { href: '/dashboard/casos', label: 'Casos', icon: 'balance' },
+  { href: '/dashboard/agenda', label: 'Agenda', icon: 'calendar' },
+  { href: '/dashboard/clientes', label: 'Clientes', icon: 'people' },
+  { href: '/dashboard/honorarios', label: 'Honorarios', icon: 'currency' },
+  { href: '/dashboard/documentos', label: 'Documentos', icon: 'documents' },
+  { href: '/dashboard/configuracion', label: 'Configuración', icon: 'gear' },
 ];
 
 function isActive(itemHref: string, pathname: string, exact?: boolean) {
@@ -174,7 +221,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   overflow: 'hidden',
                 }}
               >
-                <span style={{ fontSize: 15, flexShrink: 0 }}>{item.icon}</span>
+                <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{ICONS[item.icon]}</span>
                 {(!collapsed || isMobile) && item.label}
               </div>
             </Link>
