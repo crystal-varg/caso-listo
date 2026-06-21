@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { Badge, URGENCIA_CFG } from '@/components/Badge';
 
 interface Consulta {
   id: number; nombre_cliente: string; email: string; telefono: string;
@@ -10,22 +11,21 @@ interface Consulta {
   score_category?: 'ALTO' | 'MEDIO' | 'BAJO';
 }
 
-const SCORE_BADGE: Record<string, { label: string; emoji: string; bg: string; color: string }> = {
-  ALTO:  { label: 'Alto',  emoji: '🟢', bg: '#dcfce7', color: '#15803d' },
-  MEDIO: { label: 'Medio', emoji: '🟡', bg: '#fef3c7', color: '#b45309' },
-  BAJO:  { label: 'Bajo',  emoji: '🔴', bg: '#fee2e2', color: '#dc2626' },
+// Lead score (priority): ALTO = high priority → red, BAJO = low priority → green.
+const SCORE_BADGE: Record<string, { label: string; bg: string; color: string }> = {
+  ALTO:  { label: 'Alto',  bg: '#fee2e2', color: '#dc2626' },
+  MEDIO: { label: 'Medio', bg: '#fef3c7', color: '#b45309' },
+  BAJO:  { label: 'Bajo',  bg: '#dcfce7', color: '#15803d' },
 };
 
 const ESTADOS = ['todos', 'nuevo', 'en_proceso', 'cerrado'];
 const FUEROS = ['todos', 'Laboral', 'Penal', 'Familia', 'Civil / Comercial', 'Administrativo', 'Tributario', 'Previsional', 'Sin definir'];
 
-const estadoBadge: Record<string, { label: string; cls: string }> = {
-  nuevo:      { label: 'Nuevo',      cls: 'badge-nuevo' },
-  en_proceso: { label: 'En proceso', cls: 'badge-proceso' },
-  cerrado:    { label: 'Cerrado',    cls: 'badge-cerrado' },
+const ESTADO_CFG: Record<string, { label: string; color: string; bg: string }> = {
+  nuevo:      { label: 'Nuevo',      color: '#1d4ed8', bg: '#dbeafe' },
+  en_proceso: { label: 'En proceso', color: '#b45309', bg: '#fef3c7' },
+  cerrado:    { label: 'Cerrado',    color: '#065f46', bg: '#d1fae5' },
 };
-
-const urgEmoji: Record<string, string> = { alta: '🔴', media: '🟡', baja: '🟢' };
 
 function fmt(d: string) {
   return new Date(d).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -122,22 +122,26 @@ export default function ConsultasPage() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 600, fontSize: 14 }}>{c.nombre_cliente}</span>
                     {c.score_category && SCORE_BADGE[c.score_category] && (
-                      <span
+                      <Badge
                         title={typeof c.score === 'number' ? `Score: ${c.score}` : undefined}
-                        style={{
-                          fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 12,
-                          background: SCORE_BADGE[c.score_category].bg,
-                          color: SCORE_BADGE[c.score_category].color,
-                          letterSpacing: '0.3px',
-                        }}
+                        bg={SCORE_BADGE[c.score_category].bg}
+                        color={SCORE_BADGE[c.score_category].color}
                       >
-                        {SCORE_BADGE[c.score_category].emoji} {SCORE_BADGE[c.score_category].label.toUpperCase()}
-                      </span>
+                        {SCORE_BADGE[c.score_category].label.toUpperCase()}
+                      </Badge>
                     )}
-                    {c.urgencia && <span style={{ fontSize: 13 }}>{urgEmoji[c.urgencia]}</span>}
-                    <span className={`badge ${estadoBadge[c.estado]?.cls}`}>{estadoBadge[c.estado]?.label}</span>
+                    {c.urgencia && URGENCIA_CFG[c.urgencia] && (
+                      <Badge bg={URGENCIA_CFG[c.urgencia].bg} color={URGENCIA_CFG[c.urgencia].color}>
+                        {URGENCIA_CFG[c.urgencia].label}
+                      </Badge>
+                    )}
+                    {ESTADO_CFG[c.estado] && (
+                      <Badge bg={ESTADO_CFG[c.estado].bg} color={ESTADO_CFG[c.estado].color}>
+                        {ESTADO_CFG[c.estado].label}
+                      </Badge>
+                    )}
                     {c.fuero && c.fuero !== 'Sin definir' && (
-                      <span style={{ fontSize: 12, background: '#f3f4f6', color: '#374151', padding: '2px 8px', borderRadius: 12, fontWeight: 500 }}>{c.fuero}</span>
+                      <Badge bg="#f3f4f6" color="#374151">{c.fuero}</Badge>
                     )}
                   </div>
                   <div style={{ fontSize: 13, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

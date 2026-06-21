@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { Badge, URGENCIA_CFG } from '@/components/Badge';
 
 interface Consulta {
   id: number;
@@ -24,12 +25,6 @@ interface Evento {
 }
 
 type Filtro = 'todos' | 'nuevo' | 'en_proceso' | 'en_espera';
-
-const URGENCIA_CFG: Record<string, { color: string; bg: string; label: string }> = {
-  alta:  { color: '#dc2626', bg: '#fee2e2', label: 'Urgente' },
-  media: { color: '#b45309', bg: '#fef3c7', label: 'Media'  },
-  baja:  { color: '#059669', bg: '#d1fae5', label: 'Baja'   },
-};
 
 const ESTADO_CFG: Record<string, { label: string; color: string; bg: string }> = {
   nuevo:      { label: 'Nuevo',      color: '#16a34a', bg: '#dcfce7' },
@@ -161,13 +156,9 @@ export default function CasosPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 14, fontWeight: 600, color: '#111' }}>{c.nombre_cliente}</span>
-                      <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: estadoCfg.bg, color: estadoCfg.color }}>
-                        {estadoCfg.label}
-                      </span>
+                      <Badge bg={estadoCfg.bg} color={estadoCfg.color}>{estadoCfg.label}</Badge>
                       {urgCfg && (
-                        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: urgCfg.bg, color: urgCfg.color }}>
-                          {urgCfg.label}
-                        </span>
+                        <Badge bg={urgCfg.bg} color={urgCfg.color}>{urgCfg.label}</Badge>
                       )}
                     </div>
                     <div style={{ fontSize: 12, color: '#6b7280', marginBottom: proximo ? 6 : 0 }}>

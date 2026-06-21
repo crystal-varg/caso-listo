@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { Badge } from '@/components/Badge';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -54,11 +55,11 @@ function fmtFecha(iso: string): string {
   });
 }
 
-const ESTADO_CFG: Record<Estado, { label: string; emoji: string; bg: string; color: string }> = {
-  atrasado:   { label: 'Atrasado',   emoji: '🔴', bg: '#fee2e2', color: '#dc2626' },
-  por_vencer: { label: 'Por vencer', emoji: '🟡', bg: '#fef3c7', color: '#b45309' },
-  al_dia:     { label: 'Al día',     emoji: '🟢', bg: '#d1fae5', color: '#065f46' },
-  pagado:     { label: 'Cobrado',    emoji: '✅', bg: '#f0fdf4', color: '#16a34a' },
+const ESTADO_CFG: Record<Estado, { label: string; bg: string; color: string }> = {
+  atrasado:   { label: 'Atrasado',   bg: '#fee2e2', color: '#dc2626' },
+  por_vencer: { label: 'Por vencer', bg: '#fef3c7', color: '#b45309' },
+  al_dia:     { label: 'Al día',     bg: '#d1fae5', color: '#065f46' },
+  pagado:     { label: 'Cobrado',    bg: '#f0fdf4', color: '#16a34a' },
 };
 
 const FILTROS: { key: Filtro; label: string; emoji?: string }[] = [
@@ -257,12 +258,7 @@ export default function HonorariosPage() {
                     <div style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>{casoLabel(h.consulta)}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{
-                      fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 20,
-                      background: cfg.bg, color: cfg.color, whiteSpace: 'nowrap',
-                    }}>
-                      {cfg.emoji} {cfg.label}
-                    </span>
+                    <Badge bg={cfg.bg} color={cfg.color}>{cfg.label}</Badge>
                     <button type="button" onClick={() => eliminarHonorario(h.id)}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#d1d5db', fontSize: 18, lineHeight: 1, padding: '2px 4px' }}
                       title="Eliminar honorario">

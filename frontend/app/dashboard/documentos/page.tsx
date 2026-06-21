@@ -25,11 +25,6 @@ function extIcon(filename: string): string {
   return '📎';
 }
 
-function fmtNombre(raw: string): string {
-  if (raw === 'faltante') return 'No disponible';
-  return raw;
-}
-
 export default function DocumentosPage() {
   const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,11 +178,12 @@ export default function DocumentosPage() {
                     <a
                       href={`${API_URL}/consultas/archivos/${c.dni_archivo}`}
                       target="_blank"
+                      title={c.dni_archivo}
                       style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}
                     >
                       <span style={{ fontSize: 16 }}>{extIcon(c.dni_archivo)}</span>
                       <span style={{ fontSize: 12, color: '#7c3aed', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {fmtNombre(c.dni_archivo)}
+                        DNI — {c.nombre_cliente}
                       </span>
                       <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 'auto' }}>↓</span>
                     </a>
@@ -211,11 +207,12 @@ export default function DocumentosPage() {
                     <a
                       href={`${API_URL}/consultas/archivos/${c.docs_archivo}`}
                       target="_blank"
+                      title={c.docs_archivo}
                       style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}
                     >
                       <span style={{ fontSize: 16 }}>{extIcon(c.docs_archivo)}</span>
                       <span style={{ fontSize: 12, color: '#059669', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {fmtNombre(c.docs_archivo)}
+                        Documentación — {c.nombre_cliente}
                       </span>
                       <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 'auto' }}>↓</span>
                     </a>

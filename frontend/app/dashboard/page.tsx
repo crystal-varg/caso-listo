@@ -225,10 +225,8 @@ export default function DashboardPage() {
       {/* ── HEADER ─────────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 26, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 25, fontWeight: 700, color: '#111', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>{saludo}, {usuario?.nombre?.split(' ')[0]}</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/wave.svg" alt="" width={20} height={20} style={{ flexShrink: 0 }} />
+          <h1 style={{ fontSize: 25, fontWeight: 700, color: '#111', margin: 0 }}>
+            {saludo}, {usuario?.nombre?.split(' ')[0]}
           </h1>
           <p style={{ color: '#6b7280', marginTop: 5, fontSize: 14, margin: '5px 0 0' }}>
             {prioridades.length > 0
