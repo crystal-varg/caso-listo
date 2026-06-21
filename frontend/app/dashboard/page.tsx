@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
 import { api } from '@/lib/api';
+import { Badge, ESTADO_CFG } from '@/components/Badge';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -65,12 +66,6 @@ const TIPO_EVENTO_EMOJI: Record<string, string> = {
 };
 
 const URGENCIA_COLOR: Record<string, string> = { alta: '#ef4444', media: '#f59e0b', baja: '#10b981' };
-
-const ESTADO_CFG: Record<string, { label: string; color: string; bg: string }> = {
-  nuevo:      { label: 'Nuevo',      color: '#1d4ed8', bg: '#dbeafe' },
-  en_proceso: { label: 'En proceso', color: '#b45309', bg: '#fef3c7' },
-  cerrado:    { label: 'Cerrado',    color: '#065f46', bg: '#d1fae5' },
-};
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
@@ -512,11 +507,7 @@ export default function DashboardPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginBottom: 3 }}>
                       <span style={{ fontWeight: 600, fontSize: 13, color: '#111' }}>{c.nombre_cliente}</span>
                       {c.urgencia && URGENCIA_COLOR[c.urgencia] && <span style={{ width: 8, height: 8, borderRadius: '50%', background: URGENCIA_COLOR[c.urgencia], display: 'inline-block', flexShrink: 0 }} />}
-                      {cfg && (
-                        <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: cfg.bg, color: cfg.color }}>
-                          {cfg.label}
-                        </span>
-                      )}
+                      {cfg && <Badge bg={cfg.bg} color={cfg.color}>{cfg.label}</Badge>}
                       {c.tipo_caso && <span style={{ fontSize: 11, color: '#9ca3af' }}>{c.tipo_caso}</span>}
                     </div>
                     <div style={{ fontSize: 12, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

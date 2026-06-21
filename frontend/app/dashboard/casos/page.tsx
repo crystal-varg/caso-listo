@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import { Badge, URGENCIA_CFG } from '@/components/Badge';
+import { Badge, URGENCIA_CFG, ESTADO_CFG } from '@/components/Badge';
 
 interface Consulta {
   id: number;
@@ -25,13 +25,6 @@ interface Evento {
 }
 
 type Filtro = 'todos' | 'nuevo' | 'en_proceso' | 'en_espera';
-
-const ESTADO_CFG: Record<string, { label: string; color: string; bg: string }> = {
-  nuevo:      { label: 'Nuevo',      color: '#16a34a', bg: '#dcfce7' },
-  en_proceso: { label: 'En proceso', color: '#4f46e5', bg: '#eef2ff' },
-  en_espera:  { label: 'En espera',  color: '#b45309', bg: '#fef3c7' },
-  cerrado:    { label: 'Cerrado',    color: '#9ca3af', bg: '#f3f4f6' },
-};
 
 const FILTROS: { key: Filtro; label: string }[] = [
   { key: 'todos',      label: 'Todos'       },

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
-import { Badge, URGENCIA_CFG } from '@/components/Badge';
+import { Badge, URGENCIA_CFG, ESTADO_CFG } from '@/components/Badge';
 
 interface Consulta {
   id: number; nombre_cliente: string; email: string; telefono: string;
@@ -20,12 +20,6 @@ const SCORE_BADGE: Record<string, { label: string; bg: string; color: string }> 
 
 const ESTADOS = ['todos', 'nuevo', 'en_proceso', 'cerrado'];
 const FUEROS = ['todos', 'Laboral', 'Penal', 'Familia', 'Civil / Comercial', 'Administrativo', 'Tributario', 'Previsional', 'Sin definir'];
-
-const ESTADO_CFG: Record<string, { label: string; color: string; bg: string }> = {
-  nuevo:      { label: 'Nuevo',      color: '#1d4ed8', bg: '#dbeafe' },
-  en_proceso: { label: 'En proceso', color: '#b45309', bg: '#fef3c7' },
-  cerrado:    { label: 'Cerrado',    color: '#065f46', bg: '#d1fae5' },
-};
 
 function fmt(d: string) {
   return new Date(d).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });

@@ -42,3 +42,11 @@ export const URGENCIA_CFG: Record<string, { label: string; color: string; bg: st
   media: { label: 'Media', color: '#b45309', bg: '#fef3c7' },
   baja:  { label: 'Baja',  color: '#059669', bg: '#d1fae5' },
 };
+
+/** Shared consulta workflow-state palette — same colors on every screen. */
+export const ESTADO_CFG: Record<string, { label: string; color: string; bg: string }> = {
+  nuevo:      { label: 'Nuevo',      color: '#1d4ed8', bg: '#dbeafe' }, // blue
+  en_proceso: { label: 'En proceso', color: '#4f46e5', bg: '#eef2ff' }, // indigo
+  en_espera:  { label: 'En espera',  color: '#b45309', bg: '#fef3c7' }, // amber
+  cerrado:    { label: 'Cerrado',    color: '#6b7280', bg: '#f3f4f6' }, // gray
+};
